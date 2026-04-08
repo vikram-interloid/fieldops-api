@@ -9,4 +9,9 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Get('theme-color')
+  getThemeColor(): string {
+    return this.appService.getThemeColor();
+  }
 }

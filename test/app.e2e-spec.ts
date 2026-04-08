@@ -20,6 +20,13 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect('Hello World!');
+      .expect('Hello World! Theme color: #2563EB');
+  });
+
+  it('/theme-color (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/theme-color')
+      .expect(200)
+      .expect('#2563EB');
   });
 });
