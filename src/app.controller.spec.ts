@@ -15,8 +15,14 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return the greeting with theme color', () => {
+      expect(appController.getHello()).toBe('Hello World! Theme color: #2563EB');
+    });
+  });
+
+  describe('theme-color', () => {
+    it('should return the theme color', () => {
+      expect(appController.getThemeColor()).toBe('#2563EB');
     });
   });
 });
