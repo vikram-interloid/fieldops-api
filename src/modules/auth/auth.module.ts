@@ -7,6 +7,9 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 
 import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
+import { PasswordService } from './services/password.service';
+import { TokenService } from './services/token.service';
+import { RefreshTokenService } from './services/refresh-token.service';
 
 @Module({
     imports: [
@@ -28,6 +31,9 @@ import { AuthService } from './services/auth.service';
     providers: [
         AuthService,
         JwtStrategy,
+        PasswordService,
+        TokenService,
+        RefreshTokenService,
     ],
     exports: [AuthService],
 })
