@@ -42,4 +42,17 @@ export class TokenService {
             }
         )
     }
+
+    verifyRefreshToken(
+        refreshToken: string,
+    ): { sub: number } {
+        return this.jwtService.verify(
+            refreshToken,
+            {
+                secret: this.configService.getOrThrow<string>(
+                    'JWT_REFRESH_SECRET',
+                ),
+            },
+        );
+    }
 }

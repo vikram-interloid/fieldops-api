@@ -10,6 +10,7 @@ import { LoginDto } from '../dto/login.dto';
 import type { AuthResponse } from '../responses/auth.response';
 import { RolesGaurd } from '../guards/roles.guard';
 import { RoleEnum } from '../enums/role.enum';
+import { RefreshTokenDto } from '../dto/refresh-token.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -46,4 +47,19 @@ export class AuthController {
             message: 'Admin access granted',
         }
     };
+
+    @Post('refresh')
+    refresh(
+        @Body() dto: RefreshTokenDto,
+    ): Promise<AuthResponse> {
+        return this.authService.refresh(dto.refreshToken,);
+    }
+
+    @Post('logout')
+    @UseGuards(JwtAuthGuard)
+    logout(
+        @CurrentUser() user: AuthUser,
+    ): Promise<void> {
+        return this.authService.logout(user.userId,);
+    }
 }

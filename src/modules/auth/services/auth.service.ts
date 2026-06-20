@@ -16,6 +16,7 @@ import { AUTH_MESSAGES } from "../constants/auth.constants";
 import { PasswordService } from "./password.service";
 import { TokenService } from "./token.service";
 import { RefreshTokenService } from "./refresh-token.service";
+import { JwtPayload } from "../interfaces/jwt-payload.interface";
 
 @Injectable()
 export class AuthService {
@@ -91,6 +92,7 @@ export class AuthService {
             sub: result.user.id,
             email: result.user.email,
             roles: [result.role.name],
+            tokenVersion: result.user.tokenVersion,
         });
 
         const refreshToken = this.tokenService.generateRefreshToken(
@@ -154,6 +156,7 @@ export class AuthService {
             sub: user.id,
             email: user.email,
             roles,
+            tokenVersion: user.tokenVersion
         });
 
         const refreshToken = this.tokenService.generateRefreshToken(
@@ -176,5 +179,105 @@ export class AuthService {
                 email: user.email,
             },
         };
+    }
+
+    async refresh(
+        refreshToken: string
+    ): Promise<AuthResponse> {
+        const payload = this.tokenService.verifyRefreshToken(
+            refreshToken,
+        );
+        const userId = payload.sub
+        
+        const isValid = await this.refreshTokenService.validate(
+            userId,
+            refreshToken,
+        );
+
+        if (!isValid) {
+            throw new UnauthorizedException(
+                AUTH_MESSAGES.INVALID_CREDENTIALS,
+            );
+        }
+
+        const user = await this.prisma.user.findUnique({
+            where: {
+                id: userId,
+            },
+
+            include: {
+                userRoles: {
+                    include: {
+                        role: true,
+                    },
+                },
+            },
+        });
+
+        if (!user) {
+            throw new NotFoundException(
+                AUTH_MESSAGES.USER_NOT_FOUND,
+            );
+        }
+
+        const roles = user.userRoles.map(
+            (userRole) => userRole.role.name,
+        );
+
+        const jwtPayload: JwtPayload = {
+            sub: user.id,
+            email: user.email,
+            roles,
+            tokenVersion: user.tokenVersion,
+        };
+
+        const accessToken = this.tokenService.generateAccessToken(
+            jwtPayload,
+        );
+
+        const newRefreshToken = this.tokenService.generateRefreshToken(
+            userId,
+        );
+
+        await this.refreshTokenService.deleteByUserId(
+            user.id,
+        );
+
+        await this.refreshTokenService.save(
+            userId,
+            newRefreshToken,
+        );
+
+        return {
+            accessToken,
+            refreshToken,
+
+            user: {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+            },
+        };
+    }
+
+    async logout(
+        userId: number,
+    ): Promise<void> {
+        await this.refreshTokenService.deleteByUserId(
+            userId,
+        );
+
+        await this.prisma.user.update({
+            where: {
+                id: userId,
+            },
+
+            data: {
+                tokenVersion: {
+                    increment: 1,
+                },
+            },
+        });
     }
 }
