@@ -6,24 +6,24 @@ import {
     NotFoundException
 } from "@nestjs/common";
 
-import { StringValue } from 'ms';
-import * as bcrypt from 'bcrypt';
-import { JwtService } from "@nestjs/jwt";
 import { PrismaService } from "src/core/database/prisma.service";
 
 import { RegisterDto } from "../dto/register.dto";
 import { LoginDto } from "../dto/login.dto";
 import { RoleEnum } from "../enums/role.enum";
 import { AuthResponse } from "../responses/auth.response";
-import { ConfigService } from "@nestjs/config";
 import { AUTH_MESSAGES } from "../constants/auth.constants";
+import { PasswordService } from "./password.service";
+import { TokenService } from "./token.service";
+import { RefreshTokenService } from "./refresh-token.service";
 
 @Injectable()
 export class AuthService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly jwtService: JwtService,
-        private readonly configService: ConfigService,
+        private readonly passwordService: PasswordService,
+        private readonly tokenService: TokenService,
+        private readonly refreshTokenService: RefreshTokenService
     ) { }
 
     async register(dto: RegisterDto) {
@@ -39,9 +39,9 @@ export class AuthService {
             );
         }
 
-        const passwordHash = await this.hashPassword(
+        const passwordHash = await this.passwordService.hash(
             dto.password,
-        )
+        );
 
         const result = await this.prisma.$transaction(
             async (tx) => {
@@ -85,16 +85,21 @@ export class AuthService {
                     role,
                 }
             }
-        )
-
-        const accessToken = this.generateAccessToken(
-            result.user.id,
-            result.user.email,
-            [result.role.name],
         );
 
-        const refreshToken = this.generateRefreshToken(
+        const accessToken = this.tokenService.generateAccessToken({
+            sub: result.user.id,
+            email: result.user.email,
+            roles: [result.role.name],
+        });
+
+        const refreshToken = this.tokenService.generateRefreshToken(
             result.user.id,
+        );
+
+        await this.refreshTokenService.save(
+            result.user.id,
+            refreshToken
         );
 
         return {
@@ -130,7 +135,7 @@ export class AuthService {
             );
         }
 
-        const isPasswordValid = await this.comparePassword(
+        const isPasswordValid = await this.passwordService.compare(
             dto.password,
             user.passwordHash,
         );
@@ -145,14 +150,19 @@ export class AuthService {
             (userRole) => userRole.role.name,
         );
 
-        const accessToken = this.generateAccessToken(
-            user.id,
-            user.email,
+        const accessToken = this.tokenService.generateAccessToken({
+            sub: user.id,
+            email: user.email,
             roles,
+        });
+
+        const refreshToken = this.tokenService.generateRefreshToken(
+            user.id,
         );
 
-        const refreshToken = this.generateRefreshToken(
+        await this.refreshTokenService.save(
             user.id,
+            refreshToken,
         );
 
         return {
@@ -166,53 +176,5 @@ export class AuthService {
                 email: user.email,
             },
         };
-    }
-
-    private async hashPassword(password: string): Promise<string> {
-        return bcrypt.hash(password, 10);
-    }
-
-    private async comparePassword(
-        password: string,
-        hash: string,
-    ): Promise<boolean> {
-        return bcrypt.compare(password, hash);
-    }
-
-    private generateAccessToken(
-        userId: number,
-        email: string,
-        roles: string[],
-    ): string {
-        return this.jwtService.sign(
-            {
-                sub: userId,
-                email,
-                roles,
-            },
-            {
-                expiresIn: this.configService.getOrThrow<StringValue>(
-                    'JWT_EXPIRATION',
-                ),
-            },
-        )
-    }
-
-    private generateRefreshToken(
-        userId: number,
-    ): string {
-        return this.jwtService.sign(
-            {
-                sub: userId,
-            },
-            {
-                secret: this.configService.getOrThrow<string>(
-                    'JWT_REFRESH_SECRET',
-                ),
-                expiresIn: this.configService.getOrThrow<StringValue>(
-                    'JWT_REFRESH_EXPIRATION',
-                ),
-            },
-        )
     }
 }

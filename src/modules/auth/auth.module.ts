@@ -2,6 +2,8 @@ import { StringValue } from 'ms';
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
@@ -9,6 +11,7 @@ import { AuthService } from './services/auth.service';
 @Module({
     imports: [
         ConfigModule,
+        PassportModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
@@ -22,7 +25,10 @@ import { AuthService } from './services/auth.service';
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService],
+    providers: [
+        AuthService,
+        JwtStrategy,
+    ],
     exports: [AuthService],
 })
 export class AuthModule {}
