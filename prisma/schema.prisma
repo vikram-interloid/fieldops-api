@@ -17,12 +17,146 @@ model Organization {
   id        Int      @id @default(autoincrement())
   name      String   @db.VarChar(150)
   industry  String?  @db.VarChar(100)
+  // Account kind chosen at registration:
+  //  - 'customer': a brand/client that owns sites & assets and raises cases
+  //  - 'operator': a service company that hires technicians & covers areas
+  type       String   @default("customer") @db.VarChar(20)
+  // Operator profile (only meaningful when type = 'operator').
+  categories String[] @default([])
+  region     String?  @db.VarChar(120)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  users User[]
+  users     User[]
+  locations Location[]
+
+  customers     Customer[]
+  technicians   Technician[]
+  assets        Asset[]
+  parts         Part[]
+  workOrders    WorkOrder[]
+  serviceCases  ServiceCase[]
+  notifications Notification[]
+  slaPolicies   SlaPolicy[]
+  operators     Operator[]
+  serviceAreas  ServiceArea[]
 
   @@map("organizations")
+}
+
+// ---------------------------------------------------------------------------
+// Operator network (Option B: operators are records owned by a coordinating
+// organization). `tenantOrganizationId` is the forward-compat slot for Option A
+// — when an operator graduates to its own tenant, it points here. Routing in
+// later phases matches a case's location + category against ServiceArea rows.
+// ---------------------------------------------------------------------------
+
+model Operator {
+  id                   Int      @id @default(autoincrement())
+  organizationId       Int      @map("organization_id")
+  tenantOrganizationId Int?     @map("tenant_organization_id")
+  name                 String   @db.VarChar(150)
+  categories           String[] // vending | coffee | hvac | refrigeration | electrical | general
+  status               String   @default("Active") @db.VarChar(30)
+  contactName          String?  @map("contact_name") @db.VarChar(150)
+  email                String?  @db.VarChar(150)
+  phone                String?  @db.VarChar(30)
+  rating               Float    @default(0)
+  region               String?  @db.VarChar(80)
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  serviceAreas ServiceArea[]
+  workOrders   WorkOrder[]
+  serviceCases ServiceCase[]
+
+  @@map("operators")
+}
+
+model ServiceArea {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  operatorId     Int      @map("operator_id")
+  category       String   @db.VarChar(40)
+  region         String?  @db.VarChar(80)
+  postalPrefix   String?  @map("postal_prefix") @db.VarChar(12)
+  lat            Float?
+  lng            Float?
+  radiusKm       Float?   @map("radius_km")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  operator     Operator     @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+
+  @@map("service_areas")
+}
+
+// Per-priority SLA targets (in minutes) for an organization. Response = time to
+// first acknowledge/accept; resolution = time to complete.
+model SlaPolicy {
+  id                Int      @id @default(autoincrement())
+  organizationId    Int      @map("organization_id")
+  priority          String   @db.VarChar(20) // Low | Medium | High | Critical
+  responseMinutes   Int      @map("response_minutes")
+  resolutionMinutes Int      @map("resolution_minutes")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, priority])
+  @@map("sla_policies")
+}
+
+// ---------------------------------------------------------------------------
+// Unified location model. Replaces the former Address / DeliveryPoint and
+// CustomerLocation / CustomerDeliveryPoint pairs. A Location is always scoped
+// to an Organization (tenant). `customerId` distinguishes the org's own sites
+// (null → HQ/warehouse) from a customer's serviced sites. Geo coordinates live
+// here so assets, work orders, and the dispatch map can all share them.
+// ---------------------------------------------------------------------------
+
+model Location {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  customerId     Int?     @map("customer_id")
+  type           String   @default("customer_site") @db.VarChar(30) // hq | warehouse | customer_site
+  name           String   @db.VarChar(150)
+  address        String?  @db.VarChar(200)
+  city           String?  @db.VarChar(100)
+  region         String?  @db.VarChar(80)
+  state          String?  @db.VarChar(100)
+  postalCode     String?  @map("postal_code") @db.VarChar(20)
+  country        String?  @db.VarChar(100)
+  lat            Float?
+  lng            Float?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  customer       Customer?       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  deliveryPoints DeliveryPoint[]
+  assets         Asset[]
+  workOrders     WorkOrder[]
+
+  @@map("locations")
+}
+
+model DeliveryPoint {
+  id           Int      @id @default(autoincrement())
+  locationId   Int      @map("location_id")
+  name         String   @db.VarChar(150)
+  contactName  String?  @map("contact_name") @db.VarChar(150)
+  contactPhone String?  @map("contact_phone") @db.VarChar(20)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  assets   Asset[]
+
+  @@map("delivery_points")
 }
 
 model User {
@@ -33,14 +167,19 @@ model User {
   phone          String?  @db.VarChar(20)
   passwordHash   String   @map("password_hash") @db.VarChar(100)
   organizationId Int      @map("organization_id")
+  customerId     Int?     @map("customer_id")
+  technicianId   Int?     @map("technician_id")
   tokenVersion   Int      @default(0)
   isActive       Boolean  @default(true) @map("is_active")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
 
   organization  Organization   @relation(fields: [organizationId], references: [id])
+  customer      Customer?      @relation(fields: [customerId], references: [id])
+  technician    Technician?    @relation(fields: [technicianId], references: [id])
   userRoles     UserRole[]
   refreshTokens RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
 }
@@ -78,4 +217,225 @@ model RefreshToken {
   user   User @relation(fields: [userId], references: [id])
 
   @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  userId Int  @map("user_id")
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
+
+// Short-lived email verification codes (OTP). Not tied to a User row because
+// they gate account creation (register) as well as password reset — the
+// account may not exist yet. Keyed by email + purpose.
+model EmailOtp {
+  id         Int       @id @default(autoincrement())
+  email      String
+  purpose    String // 'register' | 'reset'
+  codeHash   String    @map("code_hash")
+  attempts   Int       @default(0)
+  consumedAt DateTime? @map("consumed_at")
+  expiresAt  DateTime  @map("expires_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([email, purpose])
+  @@map("email_otps")
+}
+
+// ---------------------------------------------------------------------------
+// Field service operations
+//
+// Enum-like fields are stored as String columns (validated in DTOs) to match
+// the existing schema style. Business dates (due, scheduledDate, warranty
+// service dates, hireDate) are stored as ISO date strings to mirror the UI.
+// ---------------------------------------------------------------------------
+
+model Customer {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  name           String   @db.VarChar(150)
+  contactName    String   @map("contact_name") @db.VarChar(150)
+  email          String   @db.VarChar(150)
+  phone          String   @db.VarChar(30)
+  industry       String   @db.VarChar(60)
+  contractType   String   @map("contract_type") @db.VarChar(40)
+  status         String   @db.VarChar(30)
+  city           String?  @db.VarChar(100)
+  address        String?  @db.VarChar(200)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  locations    Location[]
+  assets       Asset[]
+  workOrders   WorkOrder[]
+  serviceCases ServiceCase[]
+  users        User[]
+
+  @@map("customers")
+}
+
+model Technician {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  name           String   @db.VarChar(150)
+  role           String   @db.VarChar(80)
+  status         String   @db.VarChar(30)
+  activeJobs     Int      @default(0) @map("active_jobs")
+  rating         Float    @default(0)
+  skills         String[]
+  email          String?  @db.VarChar(150)
+  phone          String?  @db.VarChar(30)
+  employeeId     String?  @map("employee_id") @db.VarChar(40)
+  region         String?  @db.VarChar(40)
+  department     String?  @db.VarChar(40)
+  hireDate       String?  @map("hire_date") @db.VarChar(40)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  workOrders   WorkOrder[]
+  users        User[]
+
+  @@map("technicians")
+}
+
+model Asset {
+  id              Int      @id @default(autoincrement())
+  organizationId  Int      @map("organization_id")
+  name            String   @db.VarChar(150)
+  serial          String   @db.VarChar(120)
+  customerId      Int?     @map("customer_id")
+  health          Int      @default(100)
+  warranty        String   @db.VarChar(30)
+  status          String   @db.VarChar(30)
+  category        String?  @db.VarChar(40)
+  manufacturer    String?  @db.VarChar(120)
+  model           String?  @db.VarChar(120)
+  location        String?  @db.VarChar(200)
+  purchaseDate    String?  @map("purchase_date") @db.VarChar(40)
+  lastServiceDate String?  @map("last_service_date") @db.VarChar(40)
+  nextServiceDate String?  @map("next_service_date") @db.VarChar(40)
+  notes           String?
+  photoUrl        String?  @map("photo_url") @db.VarChar(500)
+  locationId      Int?     @map("location_id")
+  deliveryPointId Int?     @map("delivery_point_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  organization  Organization   @relation(fields: [organizationId], references: [id])
+  customer      Customer?      @relation(fields: [customerId], references: [id])
+  site          Location?      @relation(fields: [locationId], references: [id])
+  deliveryPoint DeliveryPoint? @relation(fields: [deliveryPointId], references: [id])
+  workOrders    WorkOrder[]
+
+  @@map("assets")
+}
+
+model Part {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  name           String   @db.VarChar(150)
+  sku            String   @db.VarChar(80)
+  category       String   @db.VarChar(40)
+  location       String   @db.VarChar(40)
+  quantity       Int      @default(0)
+  reorderLevel   Int      @default(0) @map("reorder_level")
+  unitPrice      Float    @default(0) @map("unit_price")
+  supplier       String?  @db.VarChar(150)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("parts")
+}
+
+model WorkOrder {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  customerId     Int?     @map("customer_id")
+  technicianId   Int?     @map("technician_id")
+  assetId        Int?     @map("asset_id")
+  priority       String   @db.VarChar(20)
+  status         String   @db.VarChar(20)
+  serviceType    String?  @map("service_type") @db.VarChar(40)
+  location       String?  @db.VarChar(200)
+  contactName    String?  @map("contact_name") @db.VarChar(150)
+  contactPhone   String?  @map("contact_phone") @db.VarChar(30)
+  contactEmail   String?  @map("contact_email") @db.VarChar(150)
+  due            String   @db.VarChar(40)
+  scheduledDate  String?  @map("scheduled_date") @db.VarChar(40)
+  estimatedHours Float?   @map("estimated_hours")
+  description    String?
+  accepted       Boolean  @default(false)
+  locationId     Int?     @map("location_id")
+  lat            Float?
+  lng            Float?
+  // SLA tracking
+  respondedAt    DateTime? @map("responded_at")
+  resolvedAt     DateTime? @map("resolved_at")
+  slaPausedAt    DateTime? @map("sla_paused_at")
+  slaPausedMs    Int       @default(0) @map("sla_paused_ms")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  operatorId     Int?     @map("operator_id")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  customer     Customer?    @relation(fields: [customerId], references: [id])
+  technician   Technician?  @relation(fields: [technicianId], references: [id])
+  asset        Asset?       @relation(fields: [assetId], references: [id])
+  site         Location?    @relation(fields: [locationId], references: [id])
+  operator     Operator?    @relation(fields: [operatorId], references: [id])
+  serviceCase  ServiceCase?
+
+  @@map("work_orders")
+}
+
+model ServiceCase {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  customerId     Int?     @map("customer_id")
+  subject        String   @db.VarChar(200)
+  description    String
+  serviceType    String   @map("service_type") @db.VarChar(40)
+  priority       String   @db.VarChar(20)
+  location       String   @db.VarChar(200)
+  status         String   @db.VarChar(20)
+  category       String?  @db.VarChar(40)
+  locationId     Int?     @map("location_id")
+  operatorId     Int?     @map("operator_id")
+  workOrderId    Int?     @unique @map("work_order_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  customer     Customer?    @relation(fields: [customerId], references: [id])
+  operator     Operator?    @relation(fields: [operatorId], references: [id])
+  workOrder    WorkOrder?   @relation(fields: [workOrderId], references: [id])
+
+  @@map("service_cases")
+}
+
+model Notification {
+  id             Int      @id @default(autoincrement())
+  organizationId Int      @map("organization_id")
+  title          String   @db.VarChar(200)
+  message        String
+  type           String   @db.VarChar(20)
+  read           Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("notifications")
 }

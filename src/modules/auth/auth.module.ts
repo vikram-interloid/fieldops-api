@@ -10,6 +10,8 @@ import { AuthService } from './services/auth.service';
 import { PasswordService } from './services/password.service';
 import { TokenService } from './services/token.service';
 import { RefreshTokenService } from './services/refresh-token.service';
+import { MailService } from './services/mail.service';
+import { OtpService } from './services/otp.service';
 
 @Module({
     imports: [
@@ -34,6 +36,8 @@ import { RefreshTokenService } from './services/refresh-token.service';
         PasswordService,
         TokenService,
         RefreshTokenService,
+        MailService,
+        OtpService,
     ],
     exports: [AuthService],
 })

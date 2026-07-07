@@ -1,0 +1,51 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+
+import { AssetsRepository } from '../repositories/assets.repository';
+import { AssetResponse } from '../responses/asset.response';
+import { CreateAssetDto } from '../dto/create-asset.dto';
+import { UpdateAssetDto } from '../dto/update-asset.dto';
+import { ASSET_MESSAGES } from '../constants/asset.constants';
+
+@Injectable()
+export class AssetsService {
+    constructor(
+        private readonly assetsRepository: AssetsRepository,
+    ) {}
+
+    findAll(userId: number) {
+        return this.assetsRepository.findAll(userId);
+    }
+
+    async findById(userId: number, id: number): Promise<AssetResponse> {
+        const asset = await this.assetsRepository.findById(
+            userId,
+            id,
+        );
+
+        if (!asset) {
+            throw new NotFoundException(ASSET_MESSAGES.NOT_FOUND);
+        }
+
+        return asset;
+    }
+
+    create(userId: number, dto: CreateAssetDto) {
+        return this.assetsRepository.create(userId, dto);
+    }
+
+    async update(
+        userId: number,
+        id: number,
+        dto: UpdateAssetDto,
+    ): Promise<AssetResponse> {
+        await this.findById(userId, id);
+
+        return this.assetsRepository.update(id, dto);
+    }
+
+    async delete(userId: number, id: number): Promise<void> {
+        await this.findById(userId, id);
+
+        await this.assetsRepository.delete(id);
+    }
+}

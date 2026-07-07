@@ -31,7 +31,7 @@ export class RolesGaurd implements CanActivate {
             return true;
         }
 
-        const request = context.switchToHttp().getResponse();
+        const request = context.switchToHttp().getRequest();
         const user: AuthUser = request.user;
  
         return requiredRoles.some(

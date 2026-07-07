@@ -1,8 +1,14 @@
-import { 
+import {
+    IsArray,
     IsEmail,
+    IsIn,
+    IsLatitude,
+    IsLongitude,
     IsNotEmpty,
+    IsOptional,
     IsString,
     Matches,
+    MaxLength,
     MinLength,
 } from 'class-validator';
 
@@ -30,4 +36,47 @@ export class RegisterDto {
     @IsString()
     @IsNotEmpty()
     organizationName: string;
+
+    // Account kind. Defaults to 'customer' when omitted.
+    @IsOptional()
+    @IsIn(['customer', 'operator'])
+    orgType?: 'customer' | 'operator';
+
+    // Operator-only profile (ignored for customer orgs).
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    categories?: string[];
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(120)
+    region?: string;
+
+    // 6-digit email verification code issued via /auth/send-otp. Required so an
+    // account can only be created after the email has been verified.
+    @IsString()
+    @Matches(/^\d{6}$/, { message: 'A valid 6-digit verification code is required' })
+    otp: string;
+
+    // Optional HQ location captured from the browser at sign-up. The user is
+    // prompted for consent; if they decline, these are omitted and no location
+    // record is created.
+    @IsOptional()
+    @IsLatitude()
+    latitude?: number;
+
+    @IsOptional()
+    @IsLongitude()
+    longitude?: number;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(200)
+    address?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    city?: string;
 }
