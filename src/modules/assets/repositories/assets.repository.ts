@@ -51,21 +51,39 @@ export class AssetsRepository {
         return user.organizationId;
     }
 
+    /**
+     * Read scope: platform staff (FieldOps) see every tenant's assets; a
+     * customer/operator tenant only sees its own org's assets.
+     */
+    private async orgScope(userId: number): Promise<{ organizationId?: number }> {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                organizationId: true,
+                organization: { select: { type: true } },
+            },
+        });
+        if (!user) throw new NotFoundException('User organization not found');
+        return user.organization?.type === 'platform'
+            ? {}
+            : { organizationId: user.organizationId };
+    }
+
     async findAll(userId: number) {
-        const organizationId = await this.resolveOrganizationId(userId);
+        const scope = await this.orgScope(userId);
 
         return this.prisma.asset.findMany({
-            where: { organizationId },
+            where: scope,
             select: selectAsset,
             orderBy: { createdAt: 'desc' },
         });
     }
 
     async findById(userId: number, id: number) {
-        const organizationId = await this.resolveOrganizationId(userId);
+        const scope = await this.orgScope(userId);
 
         return this.prisma.asset.findFirst({
-            where: { id, organizationId },
+            where: { id, ...scope },
             select: selectAsset,
         });
     }

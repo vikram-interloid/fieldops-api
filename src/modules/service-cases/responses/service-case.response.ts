@@ -7,6 +7,10 @@ export class ServiceCaseResponse {
     priority: string;
     location: string;
     status: string;
+    category?: string | null;
+    preferredOperatorId?: number | null;
+    interestedOperatorIds?: number[];
+    assignedOperatorOrgId?: number | null;
     workOrderId?: number | null;
     createdAt: Date;
     updatedAt: Date;

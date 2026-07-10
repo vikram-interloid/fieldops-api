@@ -1,40 +1,43 @@
 import {
-    Controller,
-    Get,
-    Patch,
-    ParseIntPipe,
-    UseGuards,
-    Param,
     Body,
-    Put
+    Controller,
+    Delete,
+    Get,
+    Param,
+    ParseIntPipe,
+    Patch,
+    Post,
+    UseGuards,
 } from "@nestjs/common";
 import { JwtAuthGuard } from "src/modules/auth/guards/jwt-auth.guard";
-import { RolesGaurd } from "src/modules/auth/guards/roles.guard";
+import { CurrentUser } from "src/modules/auth/decorators/current-user.decorator";
+import type { AuthUser } from "src/modules/auth/interfaces/auth-user.interface";
 import { UsersService } from "../services/users.service";
 import { UpdateUserDto } from "../dto/update-user.dto";
+import { CreateOrgUserDto } from "../dto/create-org-user.dto";
 
+/**
+ * Org-user management for tenant admins. Every action is scoped to the
+ * caller's organization; mutations additionally require `isOrgAdmin`.
+ */
 @Controller('admin/users')
-@UseGuards(
-    JwtAuthGuard,
-    RolesGaurd,
-)
+@UseGuards(JwtAuthGuard)
 export class AdminUsersController {
     constructor(
-        private readonly usersSerivce: UsersService
+        private readonly usersSerivce: UsersService,
     ) { }
 
     @Get()
-    findAll() {
-        return this.usersSerivce.findAll();
+    findAll(@CurrentUser() user: AuthUser) {
+        return this.usersSerivce.listOrgUsers(user.userId);
     }
 
-    @Get(':id')
-    findById(
-        @Param('id', ParseIntPipe) id: number,
+    @Post()
+    create(
+        @CurrentUser() user: AuthUser,
+        @Body() dto: CreateOrgUserDto,
     ) {
-        return this.usersSerivce.findById(
-            id,
-        );
+        return this.usersSerivce.createOrgUser(user.userId, dto);
     }
 
     @Patch(':id')
@@ -42,9 +45,14 @@ export class AdminUsersController {
         @Param('id', ParseIntPipe) id: number,
         @Body() dto: UpdateUserDto,
     ) {
-        return this.usersSerivce.update(
-            id,
-            dto,
-        );
+        return this.usersSerivce.update(id, dto);
+    }
+
+    @Delete(':id')
+    remove(
+        @CurrentUser() user: AuthUser,
+        @Param('id', ParseIntPipe) id: number,
+    ) {
+        return this.usersSerivce.deleteOrgUser(user.userId, id);
     }
 }

@@ -30,12 +30,14 @@ async function seedRoles() {
 }
 
 async function seedOrganization() {
-    // The default in-house service company ("FieldOps"): an operator org that
-    // hires technicians. The admin manages techs, customers, assets, etc. here.
+    // The platform org ("FieldOps"): the control-plane tenant whose staff
+    // (admin/manager/dispatcher/technician) manage every customer, operator,
+    // technician, case, and work order. Distinct from a self-registered
+    // operator org so platform admins keep full visibility (e.g. Operators).
     const data = {
         name: 'FieldOps',
         industry: 'Field Service Management',
-        type: 'operator',
+        type: 'platform',
         categories: ['hvac', 'refrigeration', 'electrical', 'general'],
         region: 'National',
     };

@@ -210,6 +210,9 @@ export class AuthService {
                         passwordHash,
                         organizationId: organization.id,
                         customerId: customer?.id,
+                        // The registrant owns the tenant — they can manage
+                        // other users in their org.
+                        isOrgAdmin: true,
                     }
                 });
 
@@ -292,6 +295,7 @@ export class AuthService {
                 roles: [result.role.name],
                 customerName: result.customer?.name ?? null,
                 orgType,
+                isOrgAdmin: result.user.isOrgAdmin ?? null,
             },
         };
     }
@@ -363,6 +367,7 @@ export class AuthService {
                 customerName: user.customer?.name ?? null,
                 technicianName: user.technician?.name ?? null,
                 orgType: user.organization?.type ?? null,
+                isOrgAdmin: user.isOrgAdmin ?? null,
             },
         };
     }

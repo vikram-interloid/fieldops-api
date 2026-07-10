@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { TechniciansRepository } from '../repositories/technicians.repository';
+import {
+    TechniciansRepository,
+    type TechnicianActor,
+} from '../repositories/technicians.repository';
 import { TechnicianResponse } from '../responses/technician.response';
 import { CreateTechnicianDto } from '../dto/create-technician.dto';
 import { UpdateTechnicianDto } from '../dto/update-technician.dto';
@@ -29,18 +32,29 @@ export class TechniciansService {
         return technician;
     }
 
-    create(userId: number, dto: CreateTechnicianDto) {
-        return this.techniciansRepository.create(userId, dto);
+    async findDetail(userId: number, id: number) {
+        const detail = await this.techniciansRepository.findDetail(userId, id);
+
+        if (!detail) {
+            throw new NotFoundException(TECHNICIAN_MESSAGES.NOT_FOUND);
+        }
+
+        return detail;
+    }
+
+    create(userId: number, dto: CreateTechnicianDto, actor?: TechnicianActor) {
+        return this.techniciansRepository.create(userId, dto, actor);
     }
 
     async update(
         userId: number,
         id: number,
         dto: UpdateTechnicianDto,
+        actor?: TechnicianActor,
     ): Promise<TechnicianResponse> {
         await this.findById(userId, id);
 
-        return this.techniciansRepository.update(id, dto);
+        return this.techniciansRepository.update(id, dto, actor);
     }
 
     async delete(userId: number, id: number): Promise<void> {

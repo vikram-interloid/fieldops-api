@@ -5,4 +5,6 @@ export class UserResponse {
     email: string;
     phone?: string | null;
     isActive: boolean;
+    isOrgAdmin?: boolean;
+    role?: string | null;
 }

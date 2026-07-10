@@ -17,6 +17,12 @@ import { ServiceCasesService } from '../services/service-cases.service';
 import { CreateCaseDto } from '../dto/create-case.dto';
 import { UpdateCaseDto } from '../dto/update-case.dto';
 import { SetStatusDto } from '../dto/set-status.dto';
+import { AssignOperatorDto } from '../dto/assign-operator.dto';
+
+/** Maps the authenticated user to the actor recorded on history events. */
+function actorOf(user: AuthUser) {
+    return { userId: user.userId, role: user.roles?.[0] };
+}
 
 @Controller('service-cases')
 @UseGuards(JwtAuthGuard)
@@ -28,6 +34,19 @@ export class ServiceCasesController {
         return this.serviceCasesService.findAll(user.userId);
     }
 
+    // Operator marketplace: region/category-matched, unassigned open cases.
+    // Declared before ':id' so "available" isn't parsed as a case id.
+    @Get('available')
+    findAvailable(@CurrentUser() user: AuthUser) {
+        return this.serviceCasesService.findAvailable(user.userId);
+    }
+
+    // Cases assigned to the caller operator org (any status).
+    @Get('assigned')
+    findAssigned(@CurrentUser() user: AuthUser) {
+        return this.serviceCasesService.findAssigned(user.userId);
+    }
+
     @Get(':id')
     findById(
         @CurrentUser() user: AuthUser,
@@ -36,12 +55,20 @@ export class ServiceCasesController {
         return this.serviceCasesService.findById(user.userId, id);
     }
 
+    @Get(':id/detail')
+    findDetail(
+        @CurrentUser() user: AuthUser,
+        @Param('id', ParseIntPipe) id: number,
+    ) {
+        return this.serviceCasesService.findDetail(user.userId, id);
+    }
+
     @Post()
     create(
         @CurrentUser() user: AuthUser,
         @Body() dto: CreateCaseDto,
     ) {
-        return this.serviceCasesService.create(user.userId, dto);
+        return this.serviceCasesService.create(user.userId, dto, actorOf(user));
     }
 
     @Patch(':id')
@@ -50,7 +77,12 @@ export class ServiceCasesController {
         @Param('id', ParseIntPipe) id: number,
         @Body() dto: UpdateCaseDto,
     ) {
-        return this.serviceCasesService.update(user.userId, id, dto);
+        return this.serviceCasesService.update(
+            user.userId,
+            id,
+            dto,
+            actorOf(user),
+        );
     }
 
     @Patch(':id/status')
@@ -59,7 +91,54 @@ export class ServiceCasesController {
         @Param('id', ParseIntPipe) id: number,
         @Body() dto: SetStatusDto,
     ) {
-        return this.serviceCasesService.setStatus(user.userId, id, dto);
+        return this.serviceCasesService.setStatus(
+            user.userId,
+            id,
+            dto,
+            actorOf(user),
+        );
+    }
+
+    @Post(':id/interest')
+    expressInterest(
+        @CurrentUser() user: AuthUser,
+        @Param('id', ParseIntPipe) id: number,
+    ) {
+        return this.serviceCasesService.expressInterest(
+            user.userId,
+            id,
+            actorOf(user),
+        );
+    }
+
+    @Get(':id/interested-operators')
+    interestedOperators(
+        @CurrentUser() user: AuthUser,
+        @Param('id', ParseIntPipe) id: number,
+    ) {
+        return this.serviceCasesService.interestedOperators(user.userId, id);
+    }
+
+    @Get(':id/assignable-operators')
+    assignableOperators(
+        @CurrentUser() user: AuthUser,
+        @Param('id', ParseIntPipe) id: number,
+    ) {
+        return this.serviceCasesService.assignableOperators(user.userId, id);
+    }
+
+    @Post(':id/assign-operator')
+    assignOperator(
+        @CurrentUser() user: AuthUser,
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: AssignOperatorDto,
+    ) {
+        return this.serviceCasesService.assignOperator(
+            user.userId,
+            id,
+            dto.operatorOrgId,
+            actorOf(user),
+        );
     }
 
     @Post(':id/convert')

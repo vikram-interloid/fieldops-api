@@ -10,5 +10,6 @@ export class AuthResponse {
         customerName?: string | null;
         technicianName?: string | null;
         orgType?: string | null;
+        isOrgAdmin?: boolean | null;
     };
 }

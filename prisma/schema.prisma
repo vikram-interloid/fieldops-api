@@ -17,9 +17,11 @@ model Organization {
   id        Int      @id @default(autoincrement())
   name      String   @db.VarChar(150)
   industry  String?  @db.VarChar(100)
-  // Account kind chosen at registration:
+  // Account kind:
+  //  - 'platform': the FieldOps control-plane tenant (staff manage everything)
   //  - 'customer': a brand/client that owns sites & assets and raises cases
   //  - 'operator': a service company that hires technicians & covers areas
+  // 'customer'/'operator' are chosen at registration; 'platform' is seeded.
   type       String   @default("customer") @db.VarChar(20)
   // Operator profile (only meaningful when type = 'operator').
   categories String[] @default([])
@@ -171,6 +173,9 @@ model User {
   technicianId   Int?     @map("technician_id")
   tokenVersion   Int      @default(0)
   isActive       Boolean  @default(true) @map("is_active")
+  // True for the org's owner/admin (the registrant). Gates org-user management
+  // for customer/operator tenants; plain members can view but not mutate.
+  isOrgAdmin     Boolean  @default(false) @map("is_org_admin")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
 
@@ -303,6 +308,7 @@ model Technician {
   organization Organization @relation(fields: [organizationId], references: [id])
   workOrders   WorkOrder[]
   users        User[]
+  events       TechnicianEvent[]
 
   @@map("technicians")
 }
@@ -396,8 +402,75 @@ model WorkOrder {
   site         Location?    @relation(fields: [locationId], references: [id])
   operator     Operator?    @relation(fields: [operatorId], references: [id])
   serviceCase  ServiceCase?
+  events       WorkOrderEvent[]
 
   @@map("work_orders")
+}
+
+// Append-only audit trail for a work order: every status change, assignment,
+// acceptance and edit is recorded here so the detail view can render a full
+// history timeline.
+model WorkOrderEvent {
+  id          Int      @id @default(autoincrement())
+  workOrderId Int      @map("work_order_id")
+  // created | status_changed | assigned_technician | accepted |
+  // assigned_operator | updated
+  type        String   @db.VarChar(40)
+  fromValue   String?  @map("from_value") @db.VarChar(150)
+  toValue     String?  @map("to_value") @db.VarChar(150)
+  note        String?
+  actorId     Int?     @map("actor_id")
+  actorName   String?  @map("actor_name") @db.VarChar(150)
+  actorRole   String?  @map("actor_role") @db.VarChar(40)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workOrder WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@map("work_order_events")
+}
+
+// Append-only audit trail for a service case (created, status changes,
+// operator interest/assignment, conversion to a work order).
+model ServiceCaseEvent {
+  id            Int      @id @default(autoincrement())
+  serviceCaseId Int      @map("service_case_id")
+  // created | status_changed | operator_interest | operator_assigned |
+  // converted | updated
+  type          String   @db.VarChar(40)
+  fromValue     String?  @map("from_value") @db.VarChar(150)
+  toValue       String?  @map("to_value") @db.VarChar(150)
+  note          String?
+  actorId       Int?     @map("actor_id")
+  actorName     String?  @map("actor_name") @db.VarChar(150)
+  actorRole     String?  @map("actor_role") @db.VarChar(40)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  serviceCase ServiceCase @relation(fields: [serviceCaseId], references: [id], onDelete: Cascade)
+
+  @@index([serviceCaseId])
+  @@map("service_case_events")
+}
+
+// Append-only audit trail for a technician (created, profile updates, status
+// changes).
+model TechnicianEvent {
+  id           Int      @id @default(autoincrement())
+  technicianId Int      @map("technician_id")
+  // created | updated | status_changed
+  type         String   @db.VarChar(40)
+  fromValue    String?  @map("from_value") @db.VarChar(150)
+  toValue      String?  @map("to_value") @db.VarChar(150)
+  note         String?
+  actorId      Int?     @map("actor_id")
+  actorName    String?  @map("actor_name") @db.VarChar(150)
+  actorRole    String?  @map("actor_role") @db.VarChar(40)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  technician Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+
+  @@index([technicianId])
+  @@map("technician_events")
 }
 
 model ServiceCase {
@@ -413,6 +486,13 @@ model ServiceCase {
   category       String?  @db.VarChar(40)
   locationId     Int?     @map("location_id")
   operatorId     Int?     @map("operator_id")
+  // Customer's preferred operator — an Operator *directory record* id, a soft
+  // hint surfaced to dispatch.
+  preferredOperatorId  Int?  @map("preferred_operator_id")
+  // Operator *organization* ids (tenants, type='operator') that opted in to
+  // service this case, and the one a platform dispatcher finally assigned.
+  interestedOperatorIds Int[] @default([]) @map("interested_operator_ids")
+  assignedOperatorOrgId Int?  @map("assigned_operator_org_id")
   workOrderId    Int?     @unique @map("work_order_id")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
@@ -421,6 +501,7 @@ model ServiceCase {
   customer     Customer?    @relation(fields: [customerId], references: [id])
   operator     Operator?    @relation(fields: [operatorId], references: [id])
   workOrder    WorkOrder?   @relation(fields: [workOrderId], references: [id])
+  events       ServiceCaseEvent[]
 
   @@map("service_cases")
 }

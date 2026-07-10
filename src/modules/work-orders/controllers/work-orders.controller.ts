@@ -19,6 +19,11 @@ import { UpdateWorkOrderDto } from '../dto/update-work-order.dto';
 import { SetStatusDto } from '../dto/set-status.dto';
 import { AssignDto } from '../dto/assign.dto';
 
+/** Maps the authenticated user to the actor recorded on history events. */
+function actorOf(user: AuthUser) {
+    return { userId: user.userId, role: user.roles?.[0] };
+}
+
 @Controller('work-orders')
 @UseGuards(JwtAuthGuard)
 export class WorkOrdersController {
@@ -37,12 +42,20 @@ export class WorkOrdersController {
         return this.workOrdersService.findById(user.userId, id);
     }
 
+    @Get(':id/detail')
+    findDetail(
+        @CurrentUser() user: AuthUser,
+        @Param('id', ParseIntPipe) id: number,
+    ) {
+        return this.workOrdersService.findDetail(user.userId, id);
+    }
+
     @Post()
     create(
         @CurrentUser() user: AuthUser,
         @Body() dto: CreateWorkOrderDto,
     ) {
-        return this.workOrdersService.create(user.userId, dto);
+        return this.workOrdersService.create(user.userId, dto, actorOf(user));
     }
 
     @Patch(':id')
@@ -51,7 +64,7 @@ export class WorkOrdersController {
         @Param('id', ParseIntPipe) id: number,
         @Body() dto: UpdateWorkOrderDto,
     ) {
-        return this.workOrdersService.update(user.userId, id, dto);
+        return this.workOrdersService.update(user.userId, id, dto, actorOf(user));
     }
 
     @Patch(':id/status')
@@ -60,7 +73,12 @@ export class WorkOrdersController {
         @Param('id', ParseIntPipe) id: number,
         @Body() dto: SetStatusDto,
     ) {
-        return this.workOrdersService.setStatus(user.userId, id, dto);
+        return this.workOrdersService.setStatus(
+            user.userId,
+            id,
+            dto,
+            actorOf(user),
+        );
     }
 
     @Patch(':id/assign')
@@ -69,7 +87,7 @@ export class WorkOrdersController {
         @Param('id', ParseIntPipe) id: number,
         @Body() dto: AssignDto,
     ) {
-        return this.workOrdersService.assign(user.userId, id, dto);
+        return this.workOrdersService.assign(user.userId, id, dto, actorOf(user));
     }
 
     @Patch(':id/accept')
@@ -77,7 +95,7 @@ export class WorkOrdersController {
         @CurrentUser() user: AuthUser,
         @Param('id', ParseIntPipe) id: number,
     ) {
-        return this.workOrdersService.accept(user.userId, id);
+        return this.workOrdersService.accept(user.userId, id, actorOf(user));
     }
 
     @Delete(':id')

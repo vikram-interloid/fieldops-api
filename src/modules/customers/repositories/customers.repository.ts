@@ -66,21 +66,40 @@ export class CustomersRepository {
         return user.organizationId;
     }
 
+    /**
+     * Read scope: platform staff (FieldOps) manage every customer across the
+     * marketplace, so their reads aren't org-filtered; a customer/operator
+     * tenant only sees its own org's customer records.
+     */
+    private async orgScope(userId: number): Promise<{ organizationId?: number }> {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                organizationId: true,
+                organization: { select: { type: true } },
+            },
+        });
+        if (!user) throw new NotFoundException('User organization not found');
+        return user.organization?.type === 'platform'
+            ? {}
+            : { organizationId: user.organizationId };
+    }
+
     async findAll(userId: number) {
-        const organizationId = await this.resolveOrganizationId(userId);
+        const scope = await this.orgScope(userId);
 
         return this.prisma.customer.findMany({
-            where: { organizationId },
+            where: scope,
             select: selectCustomer,
             orderBy: { createdAt: 'desc' },
         });
     }
 
     async findById(userId: number, id: number) {
-        const organizationId = await this.resolveOrganizationId(userId);
+        const scope = await this.orgScope(userId);
 
         return this.prisma.customer.findFirst({
-            where: { id, organizationId },
+            where: { id, ...scope },
             select: selectCustomer,
         });
     }

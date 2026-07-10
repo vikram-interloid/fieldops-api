@@ -46,6 +46,15 @@ export class CreateCaseDto {
 
     @IsOptional()
     @IsString()
+    category?: string;
+
+    // Operator directory record the customer would prefer (soft hint).
+    @IsOptional()
+    @IsInt()
+    preferredOperatorId?: number;
+
+    @IsOptional()
+    @IsString()
     @IsIn(STATUSES)
     status?: string;
 }

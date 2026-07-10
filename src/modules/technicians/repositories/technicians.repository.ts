@@ -4,6 +4,9 @@ import { PrismaService } from 'src/core/database/prisma.service';
 import { CreateTechnicianDto } from '../dto/create-technician.dto';
 import { UpdateTechnicianDto } from '../dto/update-technician.dto';
 
+/** Who performed a technician action, for the history trail. */
+export type TechnicianActor = { userId: number; role?: string };
+
 const selectTechnician = {
     id: true,
     name: true,
@@ -44,26 +47,39 @@ export class TechniciansRepository {
     }
 
     /**
-     * Organizations whose technicians a user may see: their own org plus the
-     * shared platform org ("FieldOps"), which hires the technicians every
-     * operator can dispatch. Own-org mutations still scope to `findById`.
+     * Technician visibility:
+     *  - platform staff (FieldOps) manage everyone → 'all' (no org filter);
+     *  - everyone else sees their own org plus the shared platform org, whose
+     *    technicians every operator can dispatch.
+     * Own-org mutations still scope via `findById`.
      */
-    private async resolveVisibleOrgIds(userId: number): Promise<number[]> {
-        const organizationId = await this.resolveOrganizationId(userId);
+    private async resolveVisibleOrgIds(
+        userId: number,
+    ): Promise<number[] | 'all'> {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                organizationId: true,
+                organization: { select: { type: true } },
+            },
+        });
+        if (!user) throw new NotFoundException('User organization not found');
+        if (user.organization?.type === 'platform') return 'all';
+
         const platform = await this.prisma.organization.findFirst({
-            where: { name: { in: ['FieldOps', 'Acme Field Services'] } },
+            where: { type: 'platform' },
             select: { id: true },
         });
-        const ids = new Set<number>([organizationId]);
+        const ids = new Set<number>([user.organizationId]);
         if (platform) ids.add(platform.id);
         return [...ids];
     }
 
     async findAll(userId: number) {
-        const organizationIds = await this.resolveVisibleOrgIds(userId);
+        const scope = await this.resolveVisibleOrgIds(userId);
 
         return this.prisma.technician.findMany({
-            where: { organizationId: { in: organizationIds } },
+            where: scope === 'all' ? {} : { organizationId: { in: scope } },
             select: selectTechnician,
             orderBy: { createdAt: 'desc' },
         });
@@ -78,21 +94,107 @@ export class TechniciansRepository {
         });
     }
 
-    async create(userId: number, dto: CreateTechnicianDto) {
+    /** Technician with its full history timeline (own-org scoped). */
+    async findDetail(userId: number, id: number) {
         const organizationId = await this.resolveOrganizationId(userId);
 
-        return this.prisma.technician.create({
-            data: { ...dto, organizationId },
-            select: selectTechnician,
+        return this.prisma.technician.findFirst({
+            where: { id, organizationId },
+            select: {
+                ...selectTechnician,
+                events: {
+                    orderBy: { createdAt: 'asc' },
+                    select: {
+                        id: true,
+                        type: true,
+                        fromValue: true,
+                        toValue: true,
+                        note: true,
+                        actorName: true,
+                        actorRole: true,
+                        createdAt: true,
+                    },
+                },
+            },
         });
     }
 
-    update(id: number, dto: UpdateTechnicianDto) {
-        return this.prisma.technician.update({
+    /** Appends one entry to a technician's history, resolving the actor name. */
+    private async logEvent(
+        technicianId: number,
+        type: string,
+        opts: {
+            from?: string | null;
+            to?: string | null;
+            note?: string;
+            actor?: TechnicianActor;
+        } = {},
+    ) {
+        let actorName: string | undefined;
+        if (opts.actor) {
+            const u = await this.prisma.user.findUnique({
+                where: { id: opts.actor.userId },
+                select: { firstName: true, lastName: true },
+            });
+            if (u) actorName = `${u.firstName} ${u.lastName}`;
+        }
+        await this.prisma.technicianEvent.create({
+            data: {
+                technicianId,
+                type,
+                fromValue: opts.from ?? null,
+                toValue: opts.to ?? null,
+                note: opts.note,
+                actorId: opts.actor?.userId,
+                actorName,
+                actorRole: opts.actor?.role,
+            },
+        });
+    }
+
+    async create(
+        userId: number,
+        dto: CreateTechnicianDto,
+        actor?: TechnicianActor,
+    ) {
+        const organizationId = await this.resolveOrganizationId(userId);
+
+        const created = await this.prisma.technician.create({
+            data: { ...dto, organizationId },
+            select: selectTechnician,
+        });
+        await this.logEvent(created.id, 'created', {
+            to: created.status,
+            actor: actor ?? { userId },
+        });
+        return created;
+    }
+
+    async update(
+        id: number,
+        dto: UpdateTechnicianDto,
+        actor?: TechnicianActor,
+    ) {
+        const before = await this.prisma.technician.findUnique({
+            where: { id },
+            select: { status: true },
+        });
+        const updated = await this.prisma.technician.update({
             where: { id },
             data: dto,
             select: selectTechnician,
         });
+        // A status change gets its own event; other edits log as 'updated'.
+        if (before && before.status !== updated.status) {
+            await this.logEvent(id, 'status_changed', {
+                from: before.status,
+                to: updated.status,
+                actor,
+            });
+        } else {
+            await this.logEvent(id, 'updated', { actor });
+        }
+        return updated;
     }
 
     delete(id: number) {
