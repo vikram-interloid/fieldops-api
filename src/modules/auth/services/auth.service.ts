@@ -26,6 +26,7 @@ import { RefreshTokenService } from "./refresh-token.service";
 import { OtpService } from "./otp.service";
 import { JwtPayload } from "../interfaces/jwt-payload.interface";
 import { VerifyOtpDto } from "../dto/verify-otp.dto";
+import { ResetPasswordOtpDto } from "../dto/reset-password-otp.dto";
 import { EmailService } from "src/core/email/services/email.service";
 
 @Injectable()
@@ -396,9 +397,15 @@ export class AuthService {
                 },
             });
 
-        if (existingUser) {
+        if (dto.purpose === OTP_PURPOSE.REGISTER && existingUser) {
             throw new ConflictException(
                 AUTH_MESSAGES.EMAIL_ALREADY_EXISTS,
+            );
+        }
+
+        if (dto.purpose === OTP_PURPOSE.RESET_PASSWORD && !existingUser) {
+            throw new NotFoundException(
+                AUTH_MESSAGES.USER_NOT_FOUND,
             );
         }
 
@@ -421,5 +428,45 @@ export class AuthService {
         dto: VerifyOtpDto,
     ): Promise<void> {
         await this.otpService.verifyOtp(dto);
+    }
+
+    async resetPasswordWithOtp(dto: ResetPasswordOtpDto): Promise<void> {
+        await this.otpService.verifyOtp({
+            email: dto.email,
+            otp: dto.otp,
+            purpose: OTP_PURPOSE.RESET_PASSWORD,
+        });
+
+        const verifiedOtp = await this.otpService.isVerified(
+            dto.email,
+            OTP_PURPOSE.RESET_PASSWORD,
+        );
+        const user = await this.prisma.user.findUnique({
+            where: { email: dto.email },
+            select: { id: true },
+        });
+
+        if (!user) {
+            throw new NotFoundException(AUTH_MESSAGES.USER_NOT_FOUND);
+        }
+
+        const passwordHash = await this.passwordService.hash(dto.password);
+
+        await this.prisma.$transaction([
+            this.prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    passwordHash,
+                    tokenVersion: { increment: 1 },
+                },
+            }),
+            this.prisma.refreshToken.deleteMany({
+                where: { userId: user.id },
+            }),
+            this.prisma.emailOtp.update({
+                where: { id: verifiedOtp.id },
+                data: { consumedAt: new Date() },
+            }),
+        ]);
     }
 }

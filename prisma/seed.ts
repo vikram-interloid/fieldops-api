@@ -12,7 +12,7 @@ const ROLE_NAMES = ['Admin', 'Customer', 'Technician', 'Dispatcher', 'Manager'];
 const DEMO_PASSWORD = 'Password123!';
 
 const DEMO_USERS = [
-    { firstName: 'Vikram', lastName: 'Admin', email: 'admin@fieldops.dev', role: 'Admin' },
+    { firstName: 'Vikram', lastName: 'Admin', email: 'vikram.new.dev@gmail.com', role: 'Admin' },
     { firstName: 'Maya', lastName: 'Manager', email: 'manager@fieldops.dev', role: 'Manager' },
     { firstName: 'Dev', lastName: 'Dispatcher', email: 'dispatcher@fieldops.dev', role: 'Dispatcher' },
     { firstName: 'Tara', lastName: 'Technician', email: 'tech@fieldops.dev', role: 'Technician' },

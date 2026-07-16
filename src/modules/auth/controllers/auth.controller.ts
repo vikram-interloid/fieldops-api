@@ -13,6 +13,7 @@ import { RoleEnum } from '../enums/role.enum';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { SendOtpDto } from '../dto/send-otp.dto';
 import { VerifyOtpDto } from '../dto/verify-otp.dto';
+import { ResetPasswordOtpDto } from '../dto/reset-password-otp.dto';
 import { OtpService } from '../services/otp.service';
 
 @Controller('auth')
@@ -30,6 +31,11 @@ export class AuthController {
     @Post('verify-otp')
     verifyOtp(@Body() dto: VerifyOtpDto) {
         return this.authService.verifyOtp(dto);
+    }
+
+    @Post('reset-password-otp')
+    resetPasswordWithOtp(@Body() dto: ResetPasswordOtpDto): Promise<void> {
+        return this.authService.resetPasswordWithOtp(dto);
     }
 
     @Post('register')

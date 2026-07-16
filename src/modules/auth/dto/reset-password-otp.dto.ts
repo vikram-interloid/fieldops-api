@@ -5,7 +5,7 @@ export class ResetPasswordOtpDto {
     email: string;
 
     @Matches(/^\d{6}$/, { message: 'Enter the 6-digit code' })
-    code: string;
+    otp: string;
 
     @MinLength(8)
     @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, {

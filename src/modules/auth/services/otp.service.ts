@@ -104,7 +104,7 @@ export class OtpService {
         const record =
             await this.validateOtp(
                 dto.email,
-                OTP_PURPOSE.REGISTER,
+                dto.purpose,
             );
 
         const valid =
