@@ -5,8 +5,8 @@ export class VerifyOtpDto {
     email: string;
 
     @Matches(/^\d{6}$/, { message: 'Enter the 6-digit code' })
-    code: string;
+    otp: string;
 
-    @IsIn(['register', 'reset'])
-    purpose: 'register' | 'reset';
+    @IsIn(['REGISTER', 'RESET_PASSWORD'])
+    purpose: 'REGISTER' | 'RESET_PASSWORD';
 }

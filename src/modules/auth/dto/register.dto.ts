@@ -53,12 +53,6 @@ export class RegisterDto {
     @MaxLength(120)
     region?: string;
 
-    // 6-digit email verification code issued via /auth/send-otp. Required so an
-    // account can only be created after the email has been verified.
-    @IsString()
-    @Matches(/^\d{6}$/, { message: 'A valid 6-digit verification code is required' })
-    otp: string;
-
     // Optional HQ location captured from the browser at sign-up. The user is
     // prompted for consent; if they decline, these are omitted and no location
     // record is created.

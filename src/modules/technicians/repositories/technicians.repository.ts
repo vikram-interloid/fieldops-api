@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    ForbiddenException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { CreateTechnicianDto } from '../dto/create-technician.dto';
@@ -152,11 +156,32 @@ export class TechniciansRepository {
         });
     }
 
+    /** Blocks unverified self-registered tenants from mutating the workforce. */
+    private async assertOrgVerified(userId: number): Promise<void> {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                organization: {
+                    select: { type: true, verificationStatus: true },
+                },
+            },
+        });
+        if (
+            user?.organization?.type !== 'platform' &&
+            user?.organization?.verificationStatus !== 'verified'
+        ) {
+            throw new ForbiddenException(
+                'Your organization is pending verification. You can add technicians once a FieldOps admin verifies your account.',
+            );
+        }
+    }
+
     async create(
         userId: number,
         dto: CreateTechnicianDto,
         actor?: TechnicianActor,
     ) {
+        await this.assertOrgVerified(userId);
         const organizationId = await this.resolveOrganizationId(userId);
 
         const created = await this.prisma.technician.create({

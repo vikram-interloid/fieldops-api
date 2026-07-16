@@ -23,6 +23,12 @@ model Organization {
   //  - 'operator': a service company that hires technicians & covers areas
   // 'customer'/'operator' are chosen at registration; 'platform' is seeded.
   type       String   @default("customer") @db.VarChar(20)
+  // Onboarding verification: self-registered customer/operator orgs start
+  // 'pending' and a platform admin reviews their location before 'verified'.
+  // 'rejected' blocks them. The seeded platform org is 'verified'.
+  verificationStatus String    @default("pending") @map("verification_status") @db.VarChar(20)
+  verifiedAt         DateTime? @map("verified_at")
+  verificationNote   String?   @map("verification_note") @db.VarChar(300)
   // Operator profile (only meaningful when type = 'operator').
   categories String[] @default([])
   region     String?  @db.VarChar(120)
@@ -240,17 +246,22 @@ model PasswordResetToken {
 // Short-lived email verification codes (OTP). Not tied to a User row because
 // they gate account creation (register) as well as password reset — the
 // account may not exist yet. Keyed by email + purpose.
+enum OtpPurpose {
+  REGISTER
+  RESET_PASSWORD
+}
 model EmailOtp {
   id         Int       @id @default(autoincrement())
   email      String
-  purpose    String // 'register' | 'reset'
+  purpose    OtpPurpose
   codeHash   String    @map("code_hash")
   attempts   Int       @default(0)
+  verifiedAt DateTime? @map("verified_at") 
   consumedAt DateTime? @map("consumed_at")
   expiresAt  DateTime  @map("expires_at")
   createdAt  DateTime  @default(now()) @map("created_at")
 
-  @@index([email, purpose])
+  @@unique([email, purpose])
   @@map("email_otps")
 }
 

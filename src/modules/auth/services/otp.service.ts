@@ -1,128 +1,220 @@
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { randomInt } from 'node:crypto';
 import {
-    BadRequestException,
-    ConflictException,
-    Injectable,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createHash, randomInt } from 'crypto';
-
+    OTP_EXPIRY_MINUTES,
+    OTP_LENGTH,
+} from '../constants/otp.constants';
+import { PasswordService } from './password.service';
 import { PrismaService } from 'src/core/database/prisma.service';
+import { OtpPurpose, OTP_PURPOSE } from '../constants/otp-purpose.constants';
+import { AUTH_MESSAGES } from '../constants/auth.constants';
+import { EmailOtp } from 'generated/prisma/client';
+import { VerifyOtpDto } from '../dto/verify-otp.dto';
 
-import { MailService } from './mail.service';
-
-export type OtpPurpose = 'register' | 'reset';
-
-const OTP_TTL_MS = 10 * 60 * 1000; // 10 minutes
-const MAX_ATTEMPTS = 5;
-
-/**
- * Issues and validates short-lived email verification codes (OTP) for both
- * account registration and password reset. Codes are stored hashed and are
- * single-use. In non-production the code is returned so the UI can surface it
- * while there's no live mail transport.
- */
 @Injectable()
 export class OtpService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly mail: MailService,
-        private readonly config: ConfigService,
-    ) {}
+        private readonly passwordService: PasswordService,
 
-    private hash(code: string): string {
-        return createHash('sha256').update(code).digest('hex');
-    }
+    ) { }
 
-    private get isProduction(): boolean {
-        return this.config.get<string>('NODE_ENV') === 'production';
-    }
-
-    /** Generates + emails a code. Blocks register for taken emails; stays quiet
-     *  for reset on unknown emails (avoids account enumeration). */
-    async send(
+    async createOtp(
         email: string,
         purpose: OtpPurpose,
-    ): Promise<{ devOtp?: string }> {
-        const user = await this.prisma.user.findUnique({
-            where: { email },
-            select: { id: true },
+    ): Promise<string> {
+        const otp = this.generateOtp();
+
+        const codeHash = await this.passwordService.hash(otp);
+
+        const expiresAt = this.getExpiryDate();
+
+        await this.prisma.emailOtp.upsert({
+            where: {
+                email_purpose: {
+                    email,
+                    purpose,
+                },
+            },
+            create: {
+                email,
+                purpose,
+                codeHash,
+                expiresAt,
+                verifiedAt: null,
+                consumedAt: null,
+                attempts: 0,
+            },
+            update: {
+                codeHash,
+                expiresAt,
+                verifiedAt: null,
+                consumedAt: null,
+                attempts: 0,
+            },
         });
 
-        if (purpose === 'register' && user) {
-            throw new ConflictException(
-                'An account with this email already exists.',
+        return otp;
+    }
+
+    async validateOtp(
+        email: string,
+        purpose: OtpPurpose,
+    ): Promise<EmailOtp> {
+
+        const record =
+            await this.prisma.emailOtp.findFirst({
+
+                where: {
+                    email,
+                    purpose,
+                },
+
+                orderBy: {
+                    createdAt: 'desc',
+                },
+
+            });
+
+        if (!record) {
+            throw new BadRequestException(
+                AUTH_MESSAGES.INVALID_OTP,
             );
         }
-        if (purpose === 'reset' && !user) {
-            return {};
+
+        if (record.consumedAt) {
+            throw new BadRequestException(
+                AUTH_MESSAGES.OTP_ALREADY_USED,
+            );
         }
 
-        const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
-        const codeHash = this.hash(code);
-        const expiresAt = new Date(Date.now() + OTP_TTL_MS);
+        if (record.expiresAt < new Date()) {
+            throw new BadRequestException(
+                AUTH_MESSAGES.OTP_EXPIRED,
+            );
+        }
 
-        await this.prisma.emailOtp.deleteMany({ where: { email, purpose } });
-        await this.prisma.emailOtp.create({
-            data: { email, purpose, codeHash, expiresAt },
+        return record;
+    }
+
+    async verifyOtp(
+        dto: VerifyOtpDto,
+    ): Promise<void> {
+
+        const record =
+            await this.validateOtp(
+                dto.email,
+                OTP_PURPOSE.REGISTER,
+            );
+
+        const valid =
+            await this.passwordService.compare(
+                dto.otp,
+                record.codeHash,
+            );
+
+        if (!valid) {
+            await this.prisma.emailOtp.update({
+                where: {
+                    id: record.id,
+                },
+                data: {
+                    attempts: {
+                        increment: 1,
+                    },
+                },
+            });
+
+            throw new BadRequestException(
+                AUTH_MESSAGES.INVALID_OTP,
+            );
+        }
+
+        await this.prisma.emailOtp.update({
+            where: {
+                id: record.id,
+            },
+            data: {
+                verifiedAt: new Date(),
+            },
         });
-
-        await this.mail.sendOtp(email, code, purpose);
-
-        return this.isProduction ? {} : { devOtp: code };
     }
 
-    /** Validates a code without consuming it (for UI step-gating). */
-    async verify(
+    async isVerified(
         email: string,
-        code: string,
         purpose: OtpPurpose,
-    ): Promise<{ valid: true }> {
-        await this.check(email, code, purpose, false);
-        return { valid: true };
+    ): Promise<EmailOtp> {
+
+        const record =
+            await this.prisma.emailOtp.findFirst({
+
+                where: {
+                    email,
+                    purpose,
+                },
+
+            });
+
+        if (!record) {
+            throw new BadRequestException(
+                AUTH_MESSAGES.INVALID_OTP,
+            );
+        }
+
+        if (!record.verifiedAt) {
+            throw new BadRequestException(
+                AUTH_MESSAGES.EMAIL_NOT_VERIFIED,
+            );
+        }
+
+        if (record.consumedAt) {
+            throw new BadRequestException(
+                AUTH_MESSAGES.OTP_ALREADY_USED,
+            );
+        }
+
+        if (record.expiresAt < new Date()) {
+            throw new BadRequestException(
+                AUTH_MESSAGES.OTP_EXPIRED,
+            );
+        }
+
+        return record;
     }
 
-    /** Validates and consumes a code (single-use). Call at the final action. */
-    async consume(
+    async deleteOtp(
         email: string,
-        code: string,
         purpose: OtpPurpose,
     ): Promise<void> {
-        await this.check(email, code, purpose, true);
+        await this.prisma.emailOtp.deleteMany({
+            where: {
+                email,
+                purpose,
+            },
+        });
     }
 
-    private async check(
-        email: string,
-        code: string,
-        purpose: OtpPurpose,
-        consume: boolean,
-    ): Promise<void> {
-        const record = await this.prisma.emailOtp.findFirst({
-            where: { email, purpose, consumedAt: null },
-            orderBy: { createdAt: 'desc' },
-        });
+    generateOtp(): string {
+        const min = Math.pow(
+            10,
+            OTP_LENGTH - 1,
+        );
 
-        if (!record || record.expiresAt < new Date()) {
-            throw new BadRequestException(
-                'This code is invalid or has expired. Request a new one.',
-            );
-        }
-        if (record.attempts >= MAX_ATTEMPTS) {
-            throw new BadRequestException(
-                'Too many attempts. Request a new code.',
-            );
-        }
-        if (record.codeHash !== this.hash(code)) {
-            await this.prisma.emailOtp.update({
-                where: { id: record.id },
-                data: { attempts: { increment: 1 } },
-            });
-            throw new BadRequestException('Incorrect verification code.');
-        }
-        if (consume) {
-            await this.prisma.emailOtp.update({
-                where: { id: record.id },
-                data: { consumedAt: new Date() },
-            });
-        }
+        const max = Math.pow(
+            10,
+            OTP_LENGTH,
+        );
+
+        return randomInt(
+            min,
+            max,
+        ).toString();
+    }
+
+    getExpiryDate() {
+        return new Date(
+            Date.now() +
+            OTP_EXPIRY_MINUTES * 60 * 1000,
+        );
     }
 }

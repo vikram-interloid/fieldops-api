@@ -4,6 +4,6 @@ export class SendOtpDto {
     @IsEmail()
     email: string;
 
-    @IsIn(['register', 'reset'])
-    purpose: 'register' | 'reset';
+    @IsIn(['REGISTER', 'RESET_PASSWORD'])
+    purpose: 'REGISTER' | 'RESET_PASSWORD';
 }

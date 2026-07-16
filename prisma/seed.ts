@@ -40,6 +40,8 @@ async function seedOrganization() {
         type: 'platform',
         categories: ['hvac', 'refrigeration', 'electrical', 'general'],
         region: 'National',
+        verificationStatus: 'verified',
+        verifiedAt: new Date(),
     };
 
     const existing = await prisma.organization.findFirst({

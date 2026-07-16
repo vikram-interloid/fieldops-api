@@ -7,8 +7,25 @@ const selectOrganization = {
     id: true,
     name: true,
     industry: true,
+    type: true,
+    region: true,
+    categories: true,
+    verificationStatus: true,
+    verifiedAt: true,
+    verificationNote: true,
     createdAt: true,
     updatedAt: true,
+    locations: {
+        select: {
+            name: true,
+            address: true,
+            city: true,
+            region: true,
+            state: true,
+            country: true,
+            type: true,
+        },
+    },
 }
 
 @Injectable()
@@ -17,12 +34,34 @@ export class OrganizationsRepository {
         private readonly prisma: PrismaService,
     ) { }
 
-    findAll() {
+    findAll(status?: string) {
         return this.prisma.organization.findMany({
+            where: status ? { verificationStatus: status } : undefined,
             select: selectOrganization,
             orderBy: {
                 createdAt: 'desc',
             },
+        });
+    }
+
+    /** The org type for a user (used to gate platform-only actions). */
+    async orgTypeForUser(userId: number): Promise<string | null> {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { organization: { select: { type: true } } },
+        });
+        return user?.organization?.type ?? null;
+    }
+
+    setVerification(id: number, status: string, note?: string) {
+        return this.prisma.organization.update({
+            where: { id },
+            data: {
+                verificationStatus: status,
+                verifiedAt: status === 'verified' ? new Date() : null,
+                verificationNote: note ?? null,
+            },
+            select: selectOrganization,
         });
     }
 

@@ -11,5 +11,6 @@ export class AuthResponse {
         technicianName?: string | null;
         orgType?: string | null;
         isOrgAdmin?: boolean | null;
+        verificationStatus?: string | null;
     };
 }

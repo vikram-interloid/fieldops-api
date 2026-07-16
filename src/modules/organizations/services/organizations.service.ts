@@ -1,4 +1,5 @@
 import {
+    ForbiddenException,
     Injectable,
     NotFoundException,
 } from "@nestjs/common";
@@ -33,6 +34,34 @@ export class OrganizationsService {
 
     findAll() {
         return this.organizationsRepository.findAll();
+    }
+
+    /** Only platform (FieldOps) staff may review/verify tenants. */
+    private async assertPlatform(userId: number): Promise<void> {
+        const type = await this.organizationsRepository.orgTypeForUser(userId);
+        if (type !== 'platform') {
+            throw new ForbiddenException(
+                'Only FieldOps platform staff can review organizations.',
+            );
+        }
+    }
+
+    /** Platform-only: list orgs for verification review, optionally by status. */
+    async findForReview(actorUserId: number, status?: string) {
+        await this.assertPlatform(actorUserId);
+        return this.organizationsRepository.findAll(status);
+    }
+
+    /** Platform-only: mark an org verified/rejected/pending. */
+    async setVerification(
+        actorUserId: number,
+        id: number,
+        status: 'verified' | 'rejected' | 'pending',
+        note?: string,
+    ) {
+        await this.assertPlatform(actorUserId);
+        await this.findById(id);
+        return this.organizationsRepository.setVerification(id, status, note);
     }
 
     async findById(

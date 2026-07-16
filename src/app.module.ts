@@ -17,6 +17,7 @@ import { WorkOrderModule } from './modules/work-orders/work-orders.module';
 import { SlaModule } from './modules/sla/sla.module';
 import { ServiceCaseModule } from './modules/service-cases/service-cases.module';
 import { NotificationModule } from './modules/notifications/notifications.module';
+import { EmailModule } from './core/email/email.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { NotificationModule } from './modules/notifications/notifications.module
     SlaModule,
     ServiceCaseModule,
     NotificationModule,
+    EmailModule,
   ],
 })
 export class AppModule { }

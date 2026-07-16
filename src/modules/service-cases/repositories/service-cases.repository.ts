@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    ForbiddenException,
+    Injectable,
+    NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from 'src/core/database/prisma.service';
 import { CreateCaseDto } from '../dto/create-case.dto';
@@ -160,11 +164,28 @@ export class ServiceCasesRepository {
     async create(userId: number, dto: CreateCaseDto, actor?: CaseActor) {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
-            select: { organizationId: true, customerId: true },
+            select: {
+                organizationId: true,
+                customerId: true,
+                organization: {
+                    select: { type: true, verificationStatus: true },
+                },
+            },
         });
 
         if (!user) {
             throw new NotFoundException('User organization not found');
+        }
+
+        // Self-registered tenants must be verified by platform staff before
+        // they can raise cases. The platform org is always verified.
+        if (
+            user.organization?.type !== 'platform' &&
+            user.organization?.verificationStatus !== 'verified'
+        ) {
+            throw new ForbiddenException(
+                'Your organization is pending verification. You can create cases once a FieldOps admin verifies your account.',
+            );
         }
 
         const created = await this.prisma.serviceCase.create({

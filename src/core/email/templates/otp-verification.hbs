@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FieldOps Verification Code</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f5f7fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f7fb;padding:40px 0;">
+    <tr>
+        <td align="center">
+
+            <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.08);">
+
+                <!-- Header -->
+                <tr>
+                    <td align="center" style="background:#046169;padding:32px;">
+
+                        <h1 style="margin:0;color:#ffffff;font-size:28px;">
+                            FieldOps
+                        </h1>
+
+                        <p style="margin:10px 0 0;color:#d8f3f1;font-size:15px;">
+                            Field Service Management Platform
+                        </p>
+
+                    </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                    <td style="padding:40px;">
+
+                        <h2 style="margin:0 0 20px;font-size:24px;color:#111827;">
+                            Verify Your Email Address
+                        </h2>
+
+                        <p style="font-size:16px;line-height:1.8;color:#4b5563;">
+                            Hello <strong>{{name}}</strong>,
+                        </p>
+
+                        <p style="font-size:16px;line-height:1.8;color:#4b5563;">
+                            Thank you for registering with <strong>FieldOps</strong>.
+                            To complete your registration, please use the One-Time Password (OTP) below.
+                        </p>
+
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:35px 0;">
+                            <tr>
+                                <td align="center">
+
+                                    <div style="
+                                        display:inline-block;
+                                        background:#046169;
+                                        color:#ffffff;
+                                        font-size:34px;
+                                        font-weight:bold;
+                                        letter-spacing:10px;
+                                        padding:18px 40px;
+                                        border-radius:12px;
+                                    ">
+                                        {{otp}}
+                                    </div>
+
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="font-size:16px;color:#4b5563;line-height:1.8;">
+                            <strong>Purpose</strong><br/>
+                            This verification code confirms that you own this email address and is required to activate your FieldOps account.
+                        </p>
+
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                               style="margin:25px 0;background:#fff8e6;border-left:5px solid #f59e0b;border-radius:8px;">
+                            <tr>
+                                <td style="padding:18px;">
+
+                                    <strong style="color:#92400e;">
+                                        Security Notice
+                                    </strong>
+
+                                    <p style="margin:10px 0 0;color:#92400e;font-size:15px;line-height:1.7;">
+                                        This OTP will expire in
+                                        <strong>{{expiryMinutes}} minutes</strong>.
+                                        Never share this code with anyone.
+                                    </p>
+
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="font-size:15px;color:#6b7280;line-height:1.8;">
+                            If you did not request this verification, you can safely ignore this email.
+                            No changes will be made to your account.
+                        </p>
+
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="padding:28px;background:#f8fafc;border-top:1px solid #e5e7eb;">
+
+                        <p style="margin:0;text-align:center;color:#6b7280;font-size:13px;">
+                            © {{year}} FieldOps. All rights reserved.
+                        </p>
+
+                        <p style="margin:10px 0 0;text-align:center;color:#9ca3af;font-size:12px;">
+                            This is an automated email. Please do not reply.
+                        </p>
+
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

@@ -10,13 +10,15 @@ import { AuthService } from './services/auth.service';
 import { PasswordService } from './services/password.service';
 import { TokenService } from './services/token.service';
 import { RefreshTokenService } from './services/refresh-token.service';
-import { MailService } from './services/mail.service';
 import { OtpService } from './services/otp.service';
+import { EmailService } from 'src/core/email/services/email.service';
+import { EmailModule } from 'src/core/email/email.module';
 
 @Module({
     imports: [
         ConfigModule,
         PassportModule,
+        EmailModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
@@ -36,7 +38,6 @@ import { OtpService } from './services/otp.service';
         PasswordService,
         TokenService,
         RefreshTokenService,
-        MailService,
         OtpService,
     ],
     exports: [AuthService],
