@@ -48,7 +48,7 @@ export class UpdateAssetDto {
 
     @IsOptional()
     @IsInt()
-    customerId?: number;
+    customerId?: string;
 
     @IsOptional()
     @IsString()
@@ -97,9 +97,9 @@ export class UpdateAssetDto {
 
     @IsOptional()
     @IsInt()
-    locationId?: number;
+    locationId?: string;
 
     @IsOptional()
     @IsInt()
-    deliveryPointId?: number;
+    deliveryPointId?: string;
 }

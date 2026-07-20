@@ -10,11 +10,11 @@ import { OPERATOR_MESSAGES } from '../constants/operator.constants';
 export class OperatorsService {
     constructor(private readonly operatorsRepository: OperatorsRepository) {}
 
-    findAll(userId: number) {
+    findAll(userId: string) {
         return this.operatorsRepository.findAll(userId);
     }
 
-    async findById(userId: number, id: number) {
+    async findById(userId: string, id: string) {
         const operator = await this.operatorsRepository.findById(userId, id);
         if (!operator) {
             throw new NotFoundException(OPERATOR_MESSAGES.NOT_FOUND);
@@ -22,23 +22,23 @@ export class OperatorsService {
         return operator;
     }
 
-    create(userId: number, dto: CreateOperatorDto) {
+    create(userId: string, dto: CreateOperatorDto) {
         return this.operatorsRepository.create(userId, dto);
     }
 
-    async update(userId: number, id: number, dto: UpdateOperatorDto) {
+    async update(userId: string, id: string, dto: UpdateOperatorDto) {
         await this.findById(userId, id);
         return this.operatorsRepository.update(id, dto);
     }
 
-    async delete(userId: number, id: number): Promise<void> {
+    async delete(userId: string, id: string): Promise<void> {
         await this.findById(userId, id);
         await this.operatorsRepository.delete(id);
     }
 
     async addServiceArea(
-        userId: number,
-        operatorId: number,
+        userId: string,
+        operatorId: string,
         dto: CreateServiceAreaDto,
     ) {
         const operator = await this.operatorsRepository.findOperatorInOrg(
@@ -55,7 +55,7 @@ export class OperatorsService {
         );
     }
 
-    async removeServiceArea(userId: number, areaId: number): Promise<void> {
+    async removeServiceArea(userId: string, areaId: string): Promise<void> {
         const area = await this.operatorsRepository.findServiceAreaInOrg(
             userId,
             areaId,

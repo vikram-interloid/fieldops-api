@@ -1,5 +1,5 @@
 export class OrganizationResponse {
-    id: number;
+    id: string;
     name: string;
     industry?: string | null;
     createdAt: Date;

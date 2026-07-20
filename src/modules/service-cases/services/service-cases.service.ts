@@ -20,11 +20,11 @@ export class ServiceCasesService {
         private readonly serviceCasesRepository: ServiceCasesRepository,
     ) {}
 
-    findAll(userId: number) {
+    findAll(userId: string) {
         return this.serviceCasesRepository.findAll(userId);
     }
 
-    async findById(userId: number, id: number): Promise<ServiceCaseResponse> {
+    async findById(userId: string, id: string): Promise<ServiceCaseResponse> {
         const serviceCase = await this.serviceCasesRepository.findById(
             userId,
             id,
@@ -37,7 +37,7 @@ export class ServiceCasesService {
         return serviceCase;
     }
 
-    async findDetail(userId: number, id: number) {
+    async findDetail(userId: string, id: string) {
         const detail = await this.serviceCasesRepository.findDetail(userId, id);
         if (!detail) {
             throw new NotFoundException(SERVICE_CASE_MESSAGES.NOT_FOUND);
@@ -45,7 +45,7 @@ export class ServiceCasesService {
         return detail;
     }
 
-    create(userId: number, dto: CreateCaseDto, actor?: CaseActor) {
+    create(userId: string, dto: CreateCaseDto, actor?: CaseActor) {
         return this.serviceCasesRepository.create(
             userId,
             { ...dto, status: dto.status ?? 'New' },
@@ -54,8 +54,8 @@ export class ServiceCasesService {
     }
 
     async update(
-        userId: number,
-        id: number,
+        userId: string,
+        id: string,
         dto: UpdateCaseDto,
         actor?: CaseActor,
     ): Promise<ServiceCaseResponse> {
@@ -65,8 +65,8 @@ export class ServiceCasesService {
     }
 
     async setStatus(
-        userId: number,
-        id: number,
+        userId: string,
+        id: string,
         dto: SetStatusDto,
         actor?: CaseActor,
     ): Promise<ServiceCaseResponse> {
@@ -75,13 +75,13 @@ export class ServiceCasesService {
         return this.serviceCasesRepository.updateStatus(id, dto.status, actor);
     }
 
-    async convert(userId: number, id: number) {
+    async convert(userId: string, id: string) {
         await this.findById(userId, id);
 
         return this.serviceCasesRepository.convert(userId, id);
     }
 
-    async delete(userId: number, id: number): Promise<void> {
+    async delete(userId: string, id: string): Promise<void> {
         await this.findById(userId, id);
 
         await this.serviceCasesRepository.delete(id);
@@ -89,22 +89,22 @@ export class ServiceCasesService {
 
     // ---- Operator marketplace ---------------------------------------------
 
-    findAvailable(userId: number) {
+    findAvailable(userId: string) {
         return this.serviceCasesRepository.findAvailable(userId);
     }
 
-    findAssigned(userId: number) {
+    findAssigned(userId: string) {
         return this.serviceCasesRepository.findAssigned(userId);
     }
 
-    expressInterest(userId: number, id: number, actor?: CaseActor) {
+    expressInterest(userId: string, id: string, actor?: CaseActor) {
         return this.serviceCasesRepository.addInterest(userId, id, actor);
     }
 
     async assignOperator(
-        userId: number,
-        id: number,
-        operatorOrgId: number,
+        userId: string,
+        id: string,
+        operatorOrgId: string,
         actor?: CaseActor,
     ) {
         await this.assertPlatform(userId);
@@ -115,17 +115,17 @@ export class ServiceCasesService {
         );
     }
 
-    async interestedOperators(userId: number, id: number) {
+    async interestedOperators(userId: string, id: string) {
         await this.assertPlatform(userId);
         return this.serviceCasesRepository.interestedOperators(id);
     }
 
-    async assignableOperators(userId: number, id: number) {
+    async assignableOperators(userId: string, id: string) {
         await this.assertPlatform(userId);
         return this.serviceCasesRepository.assignableOperators(id);
     }
 
-    private async assertPlatform(userId: number) {
+    private async assertPlatform(userId: string) {
         const isPlatform = await this.serviceCasesRepository.isPlatform(userId);
         if (!isPlatform) {
             throw new ForbiddenException(

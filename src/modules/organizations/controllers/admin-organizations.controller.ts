@@ -4,7 +4,7 @@ import {
     Delete,
     Get,
     Param,
-    ParseIntPipe,
+    ParseUUIDPipe,
     Patch,
     Post,
     Query,
@@ -51,7 +51,7 @@ export class AdminOrganizationsController {
     @Patch(':id/verification')
     setVerification(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: VerifyOrganizationDto,
     ) {
         return this.organizationsService.setVerification(
@@ -64,7 +64,7 @@ export class AdminOrganizationsController {
 
     @Get(':id')
     findById(
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.organizationsService.findById(id);
     }
@@ -78,7 +78,7 @@ export class AdminOrganizationsController {
 
     @Patch(':id')
     update(
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: UpdateOrganizationDto,
     ) {
         return this.organizationsService.update(id, dto);
@@ -86,7 +86,7 @@ export class AdminOrganizationsController {
 
     @Delete(':id')
     remove(
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.organizationsService.delete(id);
     }

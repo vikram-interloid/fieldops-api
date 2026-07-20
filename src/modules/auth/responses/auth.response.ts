@@ -2,7 +2,7 @@ export class AuthResponse {
     accessToken: string;
     refreshToken: string;
     user: {
-        id: number;
+        id: string;
         firstName: string;
         lastName: string;
         email: string;

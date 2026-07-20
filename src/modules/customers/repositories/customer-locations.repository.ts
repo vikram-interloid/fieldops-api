@@ -35,7 +35,7 @@ export class CustomerLocationsRepository {
      * Resolves the organization the user belongs to. Every query is scoped to
      * this organization so tenants never see each other's records.
      */
-    private async resolveOrganizationId(userId: number): Promise<number> {
+    private async resolveOrganizationId(userId: string): Promise<string> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { organizationId: true },
@@ -52,7 +52,7 @@ export class CustomerLocationsRepository {
      * Confirms the parent customer belongs to the user's organization before a
      * location is mutated. Returns null when the customer is out of scope.
      */
-    async findCustomerInOrg(userId: number, customerId: number) {
+    async findCustomerInOrg(userId: string, customerId: string) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.customer.findFirst({
@@ -65,7 +65,7 @@ export class CustomerLocationsRepository {
      * Confirms a location belongs to a customer within the user's organization.
      * Returns null when the location is out of scope.
      */
-    async findLocationInOrg(userId: number, locationId: number) {
+    async findLocationInOrg(userId: string, locationId: string) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.location.findFirst({
@@ -78,7 +78,7 @@ export class CustomerLocationsRepository {
      * Confirms a delivery point belongs to a location/customer within the
      * user's organization. Returns null when out of scope.
      */
-    async findDeliveryPointInOrg(userId: number, deliveryPointId: number) {
+    async findDeliveryPointInOrg(userId: string, deliveryPointId: string) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.deliveryPoint.findFirst({
@@ -94,7 +94,7 @@ export class CustomerLocationsRepository {
      * Creates a customer site. The location inherits its customer's
      * organization so the tenant scope and geo data stay consistent.
      */
-    async createLocation(customerId: number, dto: CreateLocationDto) {
+    async createLocation(customerId: string, dto: CreateLocationDto) {
         const customer = await this.prisma.customer.findUniqueOrThrow({
             where: { id: customerId },
             select: { organizationId: true },
@@ -111,7 +111,7 @@ export class CustomerLocationsRepository {
         });
     }
 
-    updateLocation(id: number, dto: UpdateLocationDto) {
+    updateLocation(id: string, dto: UpdateLocationDto) {
         return this.prisma.location.update({
             where: { id },
             data: dto,
@@ -119,20 +119,20 @@ export class CustomerLocationsRepository {
         });
     }
 
-    deleteLocation(id: number) {
+    deleteLocation(id: string) {
         return this.prisma.location.delete({
             where: { id },
         });
     }
 
-    createDeliveryPoint(locationId: number, dto: CreateDeliveryPointDto) {
+    createDeliveryPoint(locationId: string, dto: CreateDeliveryPointDto) {
         return this.prisma.deliveryPoint.create({
             data: { ...dto, locationId },
             select: selectDeliveryPoint,
         });
     }
 
-    deleteDeliveryPoint(id: number) {
+    deleteDeliveryPoint(id: string) {
         return this.prisma.deliveryPoint.delete({
             where: { id },
         });

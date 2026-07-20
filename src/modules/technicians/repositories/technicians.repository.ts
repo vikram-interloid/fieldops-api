@@ -9,7 +9,7 @@ import { CreateTechnicianDto } from '../dto/create-technician.dto';
 import { UpdateTechnicianDto } from '../dto/update-technician.dto';
 
 /** Who performed a technician action, for the history trail. */
-export type TechnicianActor = { userId: number; role?: string };
+export type TechnicianActor = { userId: string; role?: string };
 
 const selectTechnician = {
     id: true,
@@ -37,7 +37,7 @@ export class TechniciansRepository {
      * Resolves the organization the user belongs to. Every query is scoped to
      * this organization so tenants never see each other's records.
      */
-    private async resolveOrganizationId(userId: number): Promise<number> {
+    private async resolveOrganizationId(userId: string): Promise<string> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { organizationId: true },
@@ -58,8 +58,8 @@ export class TechniciansRepository {
      * Own-org mutations still scope via `findById`.
      */
     private async resolveVisibleOrgIds(
-        userId: number,
-    ): Promise<number[] | 'all'> {
+        userId: string,
+    ): Promise<string[] | 'all'> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: {
@@ -74,12 +74,12 @@ export class TechniciansRepository {
             where: { type: 'platform' },
             select: { id: true },
         });
-        const ids = new Set<number>([user.organizationId]);
+        const ids = new Set<string>([user.organizationId]);
         if (platform) ids.add(platform.id);
         return [...ids];
     }
 
-    async findAll(userId: number) {
+    async findAll(userId: string) {
         const scope = await this.resolveVisibleOrgIds(userId);
 
         return this.prisma.technician.findMany({
@@ -89,7 +89,7 @@ export class TechniciansRepository {
         });
     }
 
-    async findById(userId: number, id: number) {
+    async findById(userId: string, id: string) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.technician.findFirst({
@@ -99,7 +99,7 @@ export class TechniciansRepository {
     }
 
     /** Technician with its full history timeline (own-org scoped). */
-    async findDetail(userId: number, id: number) {
+    async findDetail(userId: string, id: string) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.technician.findFirst({
@@ -125,7 +125,7 @@ export class TechniciansRepository {
 
     /** Appends one entry to a technician's history, resolving the actor name. */
     private async logEvent(
-        technicianId: number,
+        technicianId: string,
         type: string,
         opts: {
             from?: string | null;
@@ -157,7 +157,7 @@ export class TechniciansRepository {
     }
 
     /** Blocks unverified self-registered tenants from mutating the workforce. */
-    private async assertOrgVerified(userId: number): Promise<void> {
+    private async assertOrgVerified(userId: string): Promise<void> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: {
@@ -177,7 +177,7 @@ export class TechniciansRepository {
     }
 
     async create(
-        userId: number,
+        userId: string,
         dto: CreateTechnicianDto,
         actor?: TechnicianActor,
     ) {
@@ -196,7 +196,7 @@ export class TechniciansRepository {
     }
 
     async update(
-        id: number,
+        id: string,
         dto: UpdateTechnicianDto,
         actor?: TechnicianActor,
     ) {
@@ -222,7 +222,7 @@ export class TechniciansRepository {
         return updated;
     }
 
-    delete(id: number) {
+    delete(id: string) {
         return this.prisma.technician.delete({
             where: { id },
         });

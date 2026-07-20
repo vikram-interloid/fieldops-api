@@ -10,11 +10,9 @@ export class TemplateService {
         template: string,
         data: Record<string, unknown>,
     ): Promise<string> {
-        const templatePath = path.join(
-            process.cwd(),
-            'src',
-            'core',
-            'email',
+         const templatePath = path.join(
+            __dirname,
+            '..',
             'templates',
             `${template}.hbs`,
         );

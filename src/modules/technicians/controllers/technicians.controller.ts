@@ -4,7 +4,7 @@ import {
     Delete,
     Get,
     Param,
-    ParseIntPipe,
+    ParseUUIDPipe,
     Patch,
     Post,
     UseGuards,
@@ -35,7 +35,7 @@ export class TechniciansController {
     @Get(':id')
     findById(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.techniciansService.findById(user.userId, id);
     }
@@ -43,7 +43,7 @@ export class TechniciansController {
     @Get(':id/detail')
     findDetail(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.techniciansService.findDetail(user.userId, id);
     }
@@ -59,7 +59,7 @@ export class TechniciansController {
     @Patch(':id')
     update(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: UpdateTechnicianDto,
     ) {
         return this.techniciansService.update(
@@ -73,7 +73,7 @@ export class TechniciansController {
     @Delete(':id')
     remove(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.techniciansService.delete(user.userId, id);
     }

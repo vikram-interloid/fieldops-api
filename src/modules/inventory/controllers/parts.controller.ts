@@ -4,7 +4,7 @@ import {
     Delete,
     Get,
     Param,
-    ParseIntPipe,
+    ParseUUIDPipe,
     Patch,
     Post,
     UseGuards,
@@ -31,7 +31,7 @@ export class PartsController {
     @Get(':id')
     findById(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.partsService.findById(user.userId, id);
     }
@@ -47,7 +47,7 @@ export class PartsController {
     @Patch(':id')
     update(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: UpdatePartDto,
     ) {
         return this.partsService.update(user.userId, id, dto);
@@ -56,7 +56,7 @@ export class PartsController {
     @Patch(':id/adjust')
     adjustQuantity(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: AdjustQuantityDto,
     ) {
         return this.partsService.adjustQuantity(user.userId, id, dto);
@@ -65,7 +65,7 @@ export class PartsController {
     @Delete(':id')
     remove(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.partsService.delete(user.userId, id);
     }

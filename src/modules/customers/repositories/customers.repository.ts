@@ -53,7 +53,7 @@ export class CustomersRepository {
      * Resolves the organization the user belongs to. Every query is scoped to
      * this organization so tenants never see each other's records.
      */
-    private async resolveOrganizationId(userId: number): Promise<number> {
+    private async resolveOrganizationId(userId: string): Promise<string> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { organizationId: true },
@@ -71,7 +71,7 @@ export class CustomersRepository {
      * marketplace, so their reads aren't org-filtered; a customer/operator
      * tenant only sees its own org's customer records.
      */
-    private async orgScope(userId: number): Promise<{ organizationId?: number }> {
+    private async orgScope(userId: string): Promise<{ organizationId?: string }> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: {
@@ -85,7 +85,7 @@ export class CustomersRepository {
             : { organizationId: user.organizationId };
     }
 
-    async findAll(userId: number) {
+    async findAll(userId: string) {
         const scope = await this.orgScope(userId);
 
         return this.prisma.customer.findMany({
@@ -95,7 +95,7 @@ export class CustomersRepository {
         });
     }
 
-    async findById(userId: number, id: number) {
+    async findById(userId: string, id: string) {
         const scope = await this.orgScope(userId);
 
         return this.prisma.customer.findFirst({
@@ -104,7 +104,7 @@ export class CustomersRepository {
         });
     }
 
-    async create(userId: number, dto: CreateCustomerDto) {
+    async create(userId: string, dto: CreateCustomerDto) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.customer.create({
@@ -113,7 +113,7 @@ export class CustomersRepository {
         });
     }
 
-    update(id: number, dto: UpdateCustomerDto) {
+    update(id: string, dto: UpdateCustomerDto) {
         return this.prisma.customer.update({
             where: { id },
             data: dto,
@@ -121,7 +121,7 @@ export class CustomersRepository {
         });
     }
 
-    delete(id: number) {
+    delete(id: string) {
         return this.prisma.customer.delete({
             where: { id },
         });

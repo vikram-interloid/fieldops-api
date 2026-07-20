@@ -38,7 +38,7 @@ export class AssetsRepository {
      * Resolves the organization the user belongs to. Every query is scoped to
      * this organization so tenants never see each other's records.
      */
-    private async resolveOrganizationId(userId: number): Promise<number> {
+    private async resolveOrganizationId(userId: string): Promise<string> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { organizationId: true },
@@ -55,7 +55,7 @@ export class AssetsRepository {
      * Read scope: platform staff (FieldOps) see every tenant's assets; a
      * customer/operator tenant only sees its own org's assets.
      */
-    private async orgScope(userId: number): Promise<{ organizationId?: number }> {
+    private async orgScope(userId: string): Promise<{ organizationId?: string }> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: {
@@ -69,7 +69,7 @@ export class AssetsRepository {
             : { organizationId: user.organizationId };
     }
 
-    async findAll(userId: number) {
+    async findAll(userId: string) {
         const scope = await this.orgScope(userId);
 
         return this.prisma.asset.findMany({
@@ -79,7 +79,7 @@ export class AssetsRepository {
         });
     }
 
-    async findById(userId: number, id: number) {
+    async findById(userId: string, id: string) {
         const scope = await this.orgScope(userId);
 
         return this.prisma.asset.findFirst({
@@ -88,7 +88,7 @@ export class AssetsRepository {
         });
     }
 
-    async create(userId: number, dto: CreateAssetDto) {
+    async create(userId: string, dto: CreateAssetDto) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.asset.create({
@@ -97,7 +97,7 @@ export class AssetsRepository {
         });
     }
 
-    update(id: number, dto: UpdateAssetDto) {
+    update(id: string, dto: UpdateAssetDto) {
         return this.prisma.asset.update({
             where: { id },
             data: dto,
@@ -105,7 +105,7 @@ export class AssetsRepository {
         });
     }
 
-    delete(id: number) {
+    delete(id: string) {
         return this.prisma.asset.delete({
             where: { id },
         });

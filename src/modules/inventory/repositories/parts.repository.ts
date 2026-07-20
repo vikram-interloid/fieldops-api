@@ -26,7 +26,7 @@ export class PartsRepository {
      * Resolves the organization the user belongs to. Every query is scoped to
      * this organization so tenants never see each other's records.
      */
-    private async resolveOrganizationId(userId: number): Promise<number> {
+    private async resolveOrganizationId(userId: string): Promise<string> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { organizationId: true },
@@ -39,7 +39,7 @@ export class PartsRepository {
         return user.organizationId;
     }
 
-    async findAll(userId: number) {
+    async findAll(userId: string) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.part.findMany({
@@ -49,7 +49,7 @@ export class PartsRepository {
         });
     }
 
-    async findById(userId: number, id: number) {
+    async findById(userId: string, id: string) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.part.findFirst({
@@ -58,7 +58,7 @@ export class PartsRepository {
         });
     }
 
-    async create(userId: number, dto: CreatePartDto) {
+    async create(userId: string, dto: CreatePartDto) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.part.create({
@@ -67,7 +67,7 @@ export class PartsRepository {
         });
     }
 
-    update(id: number, dto: UpdatePartDto) {
+    update(id: string, dto: UpdatePartDto) {
         return this.prisma.part.update({
             where: { id },
             data: dto,
@@ -75,7 +75,7 @@ export class PartsRepository {
         });
     }
 
-    updateQuantity(id: number, quantity: number) {
+    updateQuantity(id: string, quantity: number) {
         return this.prisma.part.update({
             where: { id },
             data: { quantity },
@@ -83,7 +83,7 @@ export class PartsRepository {
         });
     }
 
-    delete(id: number) {
+    delete(id: string) {
         return this.prisma.part.delete({
             where: { id },
         });

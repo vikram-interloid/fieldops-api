@@ -17,7 +17,7 @@ export class OrganizationsService {
     ) { }
 
     async findCurrent(
-        userId: number,
+        userId: string,
     ): Promise<OrganizationResponse> {
         const organization = await this.organizationsRepository.findByUserId(
             userId,
@@ -37,7 +37,7 @@ export class OrganizationsService {
     }
 
     /** Only platform (FieldOps) staff may review/verify tenants. */
-    private async assertPlatform(userId: number): Promise<void> {
+    private async assertPlatform(userId: string): Promise<void> {
         const type = await this.organizationsRepository.orgTypeForUser(userId);
         if (type !== 'platform') {
             throw new ForbiddenException(
@@ -47,15 +47,15 @@ export class OrganizationsService {
     }
 
     /** Platform-only: list orgs for verification review, optionally by status. */
-    async findForReview(actorUserId: number, status?: string) {
+    async findForReview(actorUserId: string, status?: string) {
         await this.assertPlatform(actorUserId);
         return this.organizationsRepository.findAll(status);
     }
 
     /** Platform-only: mark an org verified/rejected/pending. */
     async setVerification(
-        actorUserId: number,
-        id: number,
+        actorUserId: string,
+        id: string,
         status: 'verified' | 'rejected' | 'pending',
         note?: string,
     ) {
@@ -65,7 +65,7 @@ export class OrganizationsService {
     }
 
     async findById(
-        id: number,
+        id: string,
     ): Promise<OrganizationResponse> {
         const organization = await this.organizationsRepository.findById(id);
 
@@ -85,7 +85,7 @@ export class OrganizationsService {
     }
 
     async update(
-        id: number,
+        id: string,
         dto: UpdateOrganizationDto,
     ): Promise<OrganizationResponse> {
         await this.findById(id);
@@ -94,7 +94,7 @@ export class OrganizationsService {
     }
 
     async delete(
-        id: number,
+        id: string,
     ): Promise<void> {
         await this.findById(id);
 

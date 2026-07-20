@@ -12,11 +12,11 @@ export class AssetsService {
         private readonly assetsRepository: AssetsRepository,
     ) {}
 
-    findAll(userId: number) {
+    findAll(userId: string) {
         return this.assetsRepository.findAll(userId);
     }
 
-    async findById(userId: number, id: number): Promise<AssetResponse> {
+    async findById(userId: string, id: string): Promise<AssetResponse> {
         const asset = await this.assetsRepository.findById(
             userId,
             id,
@@ -29,13 +29,13 @@ export class AssetsService {
         return asset;
     }
 
-    create(userId: number, dto: CreateAssetDto) {
+    create(userId: string, dto: CreateAssetDto) {
         return this.assetsRepository.create(userId, dto);
     }
 
     async update(
-        userId: number,
-        id: number,
+        userId: string,
+        id: string,
         dto: UpdateAssetDto,
     ): Promise<AssetResponse> {
         await this.findById(userId, id);
@@ -43,7 +43,7 @@ export class AssetsService {
         return this.assetsRepository.update(id, dto);
     }
 
-    async delete(userId: number, id: number): Promise<void> {
+    async delete(userId: string, id: string): Promise<void> {
         await this.findById(userId, id);
 
         await this.assetsRepository.delete(id);

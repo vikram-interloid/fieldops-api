@@ -35,7 +35,7 @@ export class UsersRepository {
         });
     }
 
-    findById(id: number) {
+    findById(id: string) {
         return this.prisma.user.findUnique({
             select: selectUser,
             where: {
@@ -54,7 +54,7 @@ export class UsersRepository {
     }
 
     async update(
-        id: number,
+        id: string,
         dto: UpdateUserDto,
     ) {
         return this.prisma.user.update({
@@ -66,7 +66,7 @@ export class UsersRepository {
     }
 
     async delete(
-        id: number,
+        id: string,
     ) {
         return this.prisma.user.update({
             where: {
@@ -81,7 +81,7 @@ export class UsersRepository {
     // ---- Org-scoped user management ---------------------------------------
 
     /** The caller's organization + whether they own it (may manage users). */
-    async getCaller(userId: number) {
+    async getCaller(userId: string) {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { organizationId: true, isOrgAdmin: true },
@@ -91,7 +91,7 @@ export class UsersRepository {
     }
 
     /** Organization kind, to pick a default role for new members. */
-    async orgType(organizationId: number): Promise<string> {
+    async orgType(organizationId: string): Promise<string> {
         const org = await this.prisma.organization.findUnique({
             where: { id: organizationId },
             select: { type: true },
@@ -99,7 +99,7 @@ export class UsersRepository {
         return org?.type ?? 'customer';
     }
 
-    findAllInOrg(organizationId: number) {
+    findAllInOrg(organizationId: string) {
         return this.prisma.user.findMany({
             where: { organizationId },
             select: selectOrgUser,
@@ -107,7 +107,7 @@ export class UsersRepository {
         });
     }
 
-    findByIdInOrg(organizationId: number, id: number) {
+    findByIdInOrg(organizationId: string, id: string) {
         return this.prisma.user.findFirst({
             where: { id, organizationId },
             select: selectOrgUser,
@@ -115,7 +115,7 @@ export class UsersRepository {
     }
 
     async createInOrg(
-        organizationId: number,
+        organizationId: string,
         data: {
             firstName: string;
             lastName: string;
@@ -142,7 +142,7 @@ export class UsersRepository {
         });
     }
 
-    async deactivateInOrg(organizationId: number, id: number) {
+    async deactivateInOrg(organizationId: string, id: string) {
         const existing = await this.prisma.user.findFirst({
             where: { id, organizationId },
             select: { id: true },

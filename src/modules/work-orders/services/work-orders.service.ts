@@ -17,11 +17,11 @@ export class WorkOrdersService {
         private readonly workOrdersRepository: WorkOrdersRepository,
     ) {}
 
-    findAll(userId: number) {
+    findAll(userId: string) {
         return this.workOrdersRepository.findAll(userId);
     }
 
-    async findById(userId: number, id: number): Promise<WorkOrderResponse> {
+    async findById(userId: string, id: string): Promise<WorkOrderResponse> {
         const workOrder = await this.workOrdersRepository.findById(userId, id);
 
         if (!workOrder) {
@@ -31,7 +31,7 @@ export class WorkOrdersService {
         return workOrder;
     }
 
-    async findDetail(userId: number, id: number) {
+    async findDetail(userId: string, id: string) {
         const detail = await this.workOrdersRepository.findDetail(userId, id);
 
         if (!detail) {
@@ -41,13 +41,13 @@ export class WorkOrdersService {
         return detail;
     }
 
-    create(userId: number, dto: CreateWorkOrderDto, actor?: WorkOrderActor) {
+    create(userId: string, dto: CreateWorkOrderDto, actor?: WorkOrderActor) {
         return this.workOrdersRepository.create(userId, dto, actor);
     }
 
     async update(
-        userId: number,
-        id: number,
+        userId: string,
+        id: string,
         dto: UpdateWorkOrderDto,
         actor?: WorkOrderActor,
     ): Promise<WorkOrderResponse> {
@@ -57,8 +57,8 @@ export class WorkOrdersService {
     }
 
     async setStatus(
-        userId: number,
-        id: number,
+        userId: string,
+        id: string,
         dto: SetStatusDto,
         actor?: WorkOrderActor,
     ): Promise<WorkOrderResponse> {
@@ -68,8 +68,8 @@ export class WorkOrdersService {
     }
 
     async assign(
-        userId: number,
-        id: number,
+        userId: string,
+        id: string,
         dto: AssignDto,
         actor?: WorkOrderActor,
     ): Promise<WorkOrderResponse> {
@@ -79,8 +79,8 @@ export class WorkOrdersService {
     }
 
     async accept(
-        userId: number,
-        id: number,
+        userId: string,
+        id: string,
         actor?: WorkOrderActor,
     ): Promise<WorkOrderResponse> {
         await this.findById(userId, id);
@@ -88,7 +88,7 @@ export class WorkOrdersService {
         return this.workOrdersRepository.accept(id, actor);
     }
 
-    async delete(userId: number, id: number): Promise<void> {
+    async delete(userId: string, id: string): Promise<void> {
         await this.findById(userId, id);
 
         await this.workOrdersRepository.delete(id);

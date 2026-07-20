@@ -13,6 +13,8 @@ const DEMO_PASSWORD = 'Password123!';
 
 const DEMO_USERS = [
     { firstName: 'Vikram', lastName: 'Admin', email: 'vikram.new.dev@gmail.com', role: 'Admin' },
+    { firstName: 'Vikram', lastName: 'Admin', email: 'user1@gmail.com', role: 'Admin' },
+    { firstName: 'Vikram', lastName: 'Admin', email: 'user2@gmail.com', role: 'Admin' },
     { firstName: 'Maya', lastName: 'Manager', email: 'manager@fieldops.dev', role: 'Manager' },
     { firstName: 'Dev', lastName: 'Dispatcher', email: 'dispatcher@fieldops.dev', role: 'Dispatcher' },
     { firstName: 'Tara', lastName: 'Technician', email: 'tech@fieldops.dev', role: 'Technician' },
@@ -30,10 +32,6 @@ async function seedRoles() {
 }
 
 async function seedOrganization() {
-    // The platform org ("FieldOps"): the control-plane tenant whose staff
-    // (admin/manager/dispatcher/technician) manage every customer, operator,
-    // technician, case, and work order. Distinct from a self-registered
-    // operator org so platform admins keep full visibility (e.g. Operators).
     const data = {
         name: 'FieldOps',
         industry: 'Field Service Management',
@@ -58,10 +56,10 @@ async function seedOrganization() {
     return prisma.organization.create({ data });
 }
 
-async function seedUsers(organizationId: number) {
+async function seedUsers(organizationId: string) {
     const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
     const roles = await prisma.role.findMany();
-    const roleByName = new Map(roles.map((r) => [r.name, r.id]));
+    const roleByName = new Map<string, string>(roles.map((r) => [r.name, r.id]));
 
     for (const u of DEMO_USERS) {
         const user = await prisma.user.upsert({
@@ -87,7 +85,7 @@ async function seedUsers(organizationId: number) {
     }
 }
 
-async function seedDomain(organizationId: number) {
+async function seedDomain(organizationId: string) {
     // Idempotency guard: only seed domain data once per organization.
     const customerCount = await prisma.customer.count({ where: { organizationId } });
     if (customerCount > 0) {
@@ -171,10 +169,10 @@ async function seedDomain(organizationId: number) {
         },
     ];
 
-    const customerByName = new Map<string, number>();
+    const customerByName = new Map<string, string>();
     // location name -> id, delivery point name -> id (names are unique enough in this seed)
-    const locationByName = new Map<string, number>();
-    const pointByName = new Map<string, number>();
+    const locationByName = new Map<string, string>();
+    const pointByName = new Map<string, string>();
 
     for (const c of customerSeed) {
         const { locations, ...scalar } = c;
@@ -215,7 +213,7 @@ async function seedDomain(organizationId: number) {
         { name: 'Priya Menon', role: 'Coffee Equipment Specialist', status: 'On Job', activeJobs: 2, rating: 4.9, skills: ['Coffee', 'Vending'], email: 'priya@acmefield.com', phone: '+91 90000 10006', region: 'South Zone', department: 'Appliances' },
         { name: 'Rahul Verma', role: 'Field Technician', status: 'Available', activeJobs: 0, rating: 4.3, skills: ['Mechanical', 'Electrical'], email: 'rahulv@acmefield.com', phone: '+91 90000 10007', region: 'West Zone', department: 'Mechanical' },
     ];
-    const technicianByName = new Map<string, number>();
+    const technicianByName = new Map<string, string>();
     for (const t of technicianSeed) {
         const tech = await prisma.technician.create({ data: { ...t, organizationId } });
         technicianByName.set(tech.name, tech.id);
@@ -252,7 +250,7 @@ async function seedDomain(organizationId: number) {
         { name: 'Reliance Frozen Aisle Rack', serial: 'SN-90066', customer: 'Reliance Retail', health: 66, warranty: 'Active', status: 'Operational', category: 'Refrigeration', manufacturer: 'Voltas', model: 'FR-800', location: 'Ahmedabad Hypermart', locationName: 'Ahmedabad Hypermart', pointName: 'Frozen Aisle', purchaseDate: '2022-09-09', lastServiceDate: '2026-04-18', nextServiceDate: '2026-07-18' },
         { name: 'Reliance Dairy Chiller', serial: 'SN-90077', customer: 'Reliance Retail', health: 83, warranty: 'Active', status: 'Operational', category: 'Refrigeration', manufacturer: 'Blue Star', model: 'DC-400', location: 'Ahmedabad Hypermart', locationName: 'Ahmedabad Hypermart', pointName: 'Dairy Chiller', purchaseDate: '2023-03-03', lastServiceDate: '2026-05-25', nextServiceDate: '2026-08-25' },
     ];
-    const assetByName = new Map<string, number>();
+    const assetByName = new Map<string, string>();
     for (const a of assetSeed) {
         const { customer, locationName, pointName, ...scalar } = a;
         const asset = await prisma.asset.create({
@@ -439,7 +437,7 @@ async function seedDomain(organizationId: number) {
  * (My Sites / My Jobs) show personalized data. Runs after domain seeding and
  * is idempotent.
  */
-async function linkDemoUsers(organizationId: number) {
+async function linkDemoUsers(organizationId: string) {
     const pepsi = await prisma.customer.findFirst({
         where: { organizationId, name: 'Pepsi' },
     });

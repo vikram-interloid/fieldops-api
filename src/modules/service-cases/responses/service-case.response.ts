@@ -1,6 +1,6 @@
 export class ServiceCaseResponse {
-    id: number;
-    customerId?: number | null;
+    id: string;
+    customerId?: string | null;
     subject: string;
     description: string;
     serviceType: string;
@@ -8,10 +8,10 @@ export class ServiceCaseResponse {
     location: string;
     status: string;
     category?: string | null;
-    preferredOperatorId?: number | null;
-    interestedOperatorIds?: number[];
-    assignedOperatorOrgId?: number | null;
-    workOrderId?: number | null;
+    preferredOperatorId?: string | null;
+    interestedOperatorIds?: string[];
+    assignedOperatorOrgId?: string | null;
+    workOrderId?: string | null;
     createdAt: Date;
     updatedAt: Date;
     customer?: { name: string } | null;

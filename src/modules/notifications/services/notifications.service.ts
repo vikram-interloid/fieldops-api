@@ -11,11 +11,11 @@ export class NotificationsService {
         private readonly notificationsRepository: NotificationsRepository,
     ) {}
 
-    findAll(userId: number) {
+    findAll(userId: string) {
         return this.notificationsRepository.findAll(userId);
     }
 
-    async findById(userId: number, id: number): Promise<NotificationResponse> {
+    async findById(userId: string, id: string): Promise<NotificationResponse> {
         const notification = await this.notificationsRepository.findById(
             userId,
             id,
@@ -28,24 +28,24 @@ export class NotificationsService {
         return notification;
     }
 
-    create(userId: number, dto: CreateNotificationDto) {
+    create(userId: string, dto: CreateNotificationDto) {
         return this.notificationsRepository.create(userId, dto);
     }
 
     async markAsRead(
-        userId: number,
-        id: number,
+        userId: string,
+        id: string,
     ): Promise<NotificationResponse> {
         await this.findById(userId, id);
 
         return this.notificationsRepository.markAsRead(id);
     }
 
-    markAllAsRead(userId: number) {
+    markAllAsRead(userId: string) {
         return this.notificationsRepository.markAllAsRead(userId);
     }
 
-    async delete(userId: number, id: number): Promise<void> {
+    async delete(userId: string, id: string): Promise<void> {
         await this.findById(userId, id);
 
         await this.notificationsRepository.delete(id);

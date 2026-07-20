@@ -4,7 +4,7 @@ import {
     Delete,
     Get,
     Param,
-    ParseIntPipe,
+    ParseUUIDPipe,
     Patch,
     Post,
     UseGuards,
@@ -42,7 +42,7 @@ export class NotificationsController {
     @Patch(':id/read')
     markAsRead(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.notificationsService.markAsRead(user.userId, id);
     }
@@ -50,7 +50,7 @@ export class NotificationsController {
     @Delete(':id')
     remove(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.notificationsService.delete(user.userId, id);
     }

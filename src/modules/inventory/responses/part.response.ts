@@ -1,5 +1,5 @@
 export class PartResponse {
-    id: number;
+    id: string;
     name: string;
     sku: string;
     category: string;

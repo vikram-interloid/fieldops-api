@@ -42,7 +42,7 @@ export class CreateCaseDto {
 
     @IsOptional()
     @IsInt()
-    customerId?: number;
+    customerId?: string;
 
     @IsOptional()
     @IsString()
@@ -51,7 +51,7 @@ export class CreateCaseDto {
     // Operator directory record the customer would prefer (soft hint).
     @IsOptional()
     @IsInt()
-    preferredOperatorId?: number;
+    preferredOperatorId?: string;
 
     @IsOptional()
     @IsString()

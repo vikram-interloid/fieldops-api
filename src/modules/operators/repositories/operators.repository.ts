@@ -40,7 +40,7 @@ export class OperatorsRepository {
     constructor(private readonly prisma: PrismaService) {}
 
     /** Resolves the caller's organization so every query stays tenant-scoped. */
-    private async resolveOrganizationId(userId: number): Promise<number> {
+    private async resolveOrganizationId(userId: string): Promise<string> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { organizationId: true },
@@ -49,7 +49,7 @@ export class OperatorsRepository {
         return user.organizationId;
     }
 
-    async findAll(userId: number) {
+    async findAll(userId: string) {
         const organizationId = await this.resolveOrganizationId(userId);
         return this.prisma.operator.findMany({
             where: { organizationId },
@@ -58,7 +58,7 @@ export class OperatorsRepository {
         });
     }
 
-    async findById(userId: number, id: number) {
+    async findById(userId: string, id: string) {
         const organizationId = await this.resolveOrganizationId(userId);
         return this.prisma.operator.findFirst({
             where: { id, organizationId },
@@ -66,7 +66,7 @@ export class OperatorsRepository {
         });
     }
 
-    async create(userId: number, dto: CreateOperatorDto) {
+    async create(userId: string, dto: CreateOperatorDto) {
         const organizationId = await this.resolveOrganizationId(userId);
         return this.prisma.operator.create({
             data: { ...dto, organizationId },
@@ -74,7 +74,7 @@ export class OperatorsRepository {
         });
     }
 
-    update(id: number, dto: UpdateOperatorDto) {
+    update(id: string, dto: UpdateOperatorDto) {
         return this.prisma.operator.update({
             where: { id },
             data: dto,
@@ -82,12 +82,12 @@ export class OperatorsRepository {
         });
     }
 
-    delete(id: number) {
+    delete(id: string) {
         return this.prisma.operator.delete({ where: { id } });
     }
 
     /** Confirms the operator is in the caller's org; returns null otherwise. */
-    async findOperatorInOrg(userId: number, operatorId: number) {
+    async findOperatorInOrg(userId: string, operatorId: string) {
         const organizationId = await this.resolveOrganizationId(userId);
         return this.prisma.operator.findFirst({
             where: { id: operatorId, organizationId },
@@ -96,8 +96,8 @@ export class OperatorsRepository {
     }
 
     createServiceArea(
-        organizationId: number,
-        operatorId: number,
+        organizationId: string,
+        operatorId: string,
         dto: CreateServiceAreaDto,
     ) {
         return this.prisma.serviceArea.create({
@@ -106,7 +106,7 @@ export class OperatorsRepository {
         });
     }
 
-    async findServiceAreaInOrg(userId: number, areaId: number) {
+    async findServiceAreaInOrg(userId: string, areaId: string) {
         const organizationId = await this.resolveOrganizationId(userId);
         return this.prisma.serviceArea.findFirst({
             where: { id: areaId, organizationId },
@@ -114,7 +114,7 @@ export class OperatorsRepository {
         });
     }
 
-    deleteServiceArea(id: number) {
+    deleteServiceArea(id: string) {
         return this.prisma.serviceArea.delete({ where: { id } });
     }
 }

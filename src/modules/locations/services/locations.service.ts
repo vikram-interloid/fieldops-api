@@ -6,7 +6,7 @@ import { LocationsRepository } from '../repositories/locations.repository';
 export class LocationsService {
     constructor(private readonly locationsRepository: LocationsRepository) {}
 
-    findAll(userId: number) {
+    findAll(userId: string) {
         return this.locationsRepository.findAll(userId);
     }
 }

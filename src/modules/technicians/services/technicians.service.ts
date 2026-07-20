@@ -15,11 +15,11 @@ export class TechniciansService {
         private readonly techniciansRepository: TechniciansRepository,
     ) {}
 
-    findAll(userId: number) {
+    findAll(userId: string) {
         return this.techniciansRepository.findAll(userId);
     }
 
-    async findById(userId: number, id: number): Promise<TechnicianResponse> {
+    async findById(userId: string, id: string): Promise<TechnicianResponse> {
         const technician = await this.techniciansRepository.findById(
             userId,
             id,
@@ -32,7 +32,7 @@ export class TechniciansService {
         return technician;
     }
 
-    async findDetail(userId: number, id: number) {
+    async findDetail(userId: string, id: string) {
         const detail = await this.techniciansRepository.findDetail(userId, id);
 
         if (!detail) {
@@ -42,13 +42,13 @@ export class TechniciansService {
         return detail;
     }
 
-    create(userId: number, dto: CreateTechnicianDto, actor?: TechnicianActor) {
+    create(userId: string, dto: CreateTechnicianDto, actor?: TechnicianActor) {
         return this.techniciansRepository.create(userId, dto, actor);
     }
 
     async update(
-        userId: number,
-        id: number,
+        userId: string,
+        id: string,
         dto: UpdateTechnicianDto,
         actor?: TechnicianActor,
     ): Promise<TechnicianResponse> {
@@ -57,7 +57,7 @@ export class TechniciansService {
         return this.techniciansRepository.update(id, dto, actor);
     }
 
-    async delete(userId: number, id: number): Promise<void> {
+    async delete(userId: string, id: string): Promise<void> {
         await this.findById(userId, id);
 
         await this.techniciansRepository.delete(id);

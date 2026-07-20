@@ -43,7 +43,7 @@ export class UpdateCaseDto {
 
     @IsOptional()
     @IsInt()
-    customerId?: number;
+    customerId?: string;
 
     @IsOptional()
     @IsString()

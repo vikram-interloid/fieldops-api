@@ -4,7 +4,7 @@ import {
     Delete,
     Get,
     Param,
-    ParseIntPipe,
+    ParseUUIDPipe,
     Patch,
     Post,
     UseGuards,
@@ -31,7 +31,7 @@ export class OperatorsController {
     @Get(':id')
     findById(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.operatorsService.findById(user.userId, id);
     }
@@ -44,7 +44,7 @@ export class OperatorsController {
     @Patch(':id')
     update(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: UpdateOperatorDto,
     ) {
         return this.operatorsService.update(user.userId, id, dto);
@@ -53,7 +53,7 @@ export class OperatorsController {
     @Delete(':id')
     remove(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.operatorsService.delete(user.userId, id);
     }
@@ -61,7 +61,7 @@ export class OperatorsController {
     @Post(':id/service-areas')
     addServiceArea(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: CreateServiceAreaDto,
     ) {
         return this.operatorsService.addServiceArea(user.userId, id, dto);
@@ -70,7 +70,7 @@ export class OperatorsController {
     @Delete('service-areas/:areaId')
     removeServiceArea(
         @CurrentUser() user: AuthUser,
-        @Param('areaId', ParseIntPipe) areaId: number,
+        @Param('areaId', ParseUUIDPipe) areaId: string,
     ) {
         return this.operatorsService.removeServiceArea(user.userId, areaId);
     }

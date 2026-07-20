@@ -6,7 +6,7 @@ import { PrismaService } from 'src/core/database/prisma.service';
 export class SlaRepository {
     constructor(private readonly prisma: PrismaService) {}
 
-    async resolveOrganizationId(userId: number): Promise<number> {
+    async resolveOrganizationId(userId: string): Promise<string> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { organizationId: true },
@@ -15,7 +15,7 @@ export class SlaRepository {
         return user.organizationId;
     }
 
-    findPolicies(organizationId: number) {
+    findPolicies(organizationId: string) {
         return this.prisma.slaPolicy.findMany({
             where: { organizationId },
             orderBy: { id: 'asc' },
@@ -23,7 +23,7 @@ export class SlaRepository {
     }
 
     upsertPolicy(
-        organizationId: number,
+        organizationId: string,
         priority: string,
         responseMinutes: number,
         resolutionMinutes: number,
@@ -43,7 +43,7 @@ export class SlaRepository {
     }
 
     /** Work orders in the org with the fields needed for SLA computation. */
-    findWorkOrdersForSla(organizationId: number) {
+    findWorkOrdersForSla(organizationId: string) {
         return this.prisma.workOrder.findMany({
             where: { organizationId },
             select: {
@@ -60,7 +60,7 @@ export class SlaRepository {
     }
 
     /** Confirms a work order is within the user's org; returns null otherwise. */
-    findWorkOrderInOrg(organizationId: number, id: number) {
+    findWorkOrderInOrg(organizationId: string, id: string) {
         return this.prisma.workOrder.findFirst({
             where: { id, organizationId },
             select: {
@@ -74,7 +74,7 @@ export class SlaRepository {
     }
 
     updateWorkOrderSla(
-        id: number,
+        id: string,
         data: {
             respondedAt?: Date;
             resolvedAt?: Date;

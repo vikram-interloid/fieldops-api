@@ -45,7 +45,7 @@ export class OrganizationsRepository {
     }
 
     /** The org type for a user (used to gate platform-only actions). */
-    async orgTypeForUser(userId: number): Promise<string | null> {
+    async orgTypeForUser(userId: string): Promise<string | null> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { organization: { select: { type: true } } },
@@ -53,7 +53,7 @@ export class OrganizationsRepository {
         return user?.organization?.type ?? null;
     }
 
-    setVerification(id: number, status: string, note?: string) {
+    setVerification(id: string, status: string, note?: string) {
         return this.prisma.organization.update({
             where: { id },
             data: {
@@ -65,7 +65,7 @@ export class OrganizationsRepository {
         });
     }
 
-    findById(id: number) {
+    findById(id: string) {
         return this.prisma.organization.findUnique({
             select: selectOrganization,
             where: {
@@ -74,7 +74,7 @@ export class OrganizationsRepository {
         });
     }
 
-    async findByUserId(userId: number) {
+    async findByUserId(userId: string) {
         const user = await this.prisma.user.findUnique({
             where: {
                 id: userId,
@@ -97,7 +97,7 @@ export class OrganizationsRepository {
     }
 
     update(
-        id: number,
+        id: string,
         dto: UpdateOrganizationDto,
     ) {
         return this.prisma.organization.update({
@@ -109,7 +109,7 @@ export class OrganizationsRepository {
         });
     }
 
-    delete(id: number) {
+    delete(id: string) {
         return this.prisma.organization.delete({
             where: {
                 id: id,

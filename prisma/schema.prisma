@@ -14,7 +14,7 @@ datasource db {
 }
 
 model Organization {
-  id        Int      @id @default(autoincrement())
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
   name      String   @db.VarChar(150)
   industry  String?  @db.VarChar(100)
   // Account kind:
@@ -52,17 +52,10 @@ model Organization {
   @@map("organizations")
 }
 
-// ---------------------------------------------------------------------------
-// Operator network (Option B: operators are records owned by a coordinating
-// organization). `tenantOrganizationId` is the forward-compat slot for Option A
-// — when an operator graduates to its own tenant, it points here. Routing in
-// later phases matches a case's location + category against ServiceArea rows.
-// ---------------------------------------------------------------------------
-
 model Operator {
-  id                   Int      @id @default(autoincrement())
-  organizationId       Int      @map("organization_id")
-  tenantOrganizationId Int?     @map("tenant_organization_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId       String      @map("organization_id")@db.Uuid
+  tenantOrganizationId String?     @map("tenant_organization_id") @db.Uuid
   name                 String   @db.VarChar(150)
   categories           String[] // vending | coffee | hvac | refrigeration | electrical | general
   status               String   @default("Active") @db.VarChar(30)
@@ -83,9 +76,9 @@ model Operator {
 }
 
 model ServiceArea {
-  id             Int      @id @default(autoincrement())
-  organizationId Int      @map("organization_id")
-  operatorId     Int      @map("operator_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
+  operatorId     String      @map("operator_id") @db.Uuid
   category       String   @db.VarChar(40)
   region         String?  @db.VarChar(80)
   postalPrefix   String?  @map("postal_prefix") @db.VarChar(12)
@@ -101,11 +94,9 @@ model ServiceArea {
   @@map("service_areas")
 }
 
-// Per-priority SLA targets (in minutes) for an organization. Response = time to
-// first acknowledge/accept; resolution = time to complete.
 model SlaPolicy {
-  id                Int      @id @default(autoincrement())
-  organizationId    Int      @map("organization_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId    String      @map("organization_id") @db.Uuid
   priority          String   @db.VarChar(20) // Low | Medium | High | Critical
   responseMinutes   Int      @map("response_minutes")
   resolutionMinutes Int      @map("resolution_minutes")
@@ -118,19 +109,11 @@ model SlaPolicy {
   @@map("sla_policies")
 }
 
-// ---------------------------------------------------------------------------
-// Unified location model. Replaces the former Address / DeliveryPoint and
-// CustomerLocation / CustomerDeliveryPoint pairs. A Location is always scoped
-// to an Organization (tenant). `customerId` distinguishes the org's own sites
-// (null → HQ/warehouse) from a customer's serviced sites. Geo coordinates live
-// here so assets, work orders, and the dispatch map can all share them.
-// ---------------------------------------------------------------------------
-
 model Location {
-  id             Int      @id @default(autoincrement())
-  organizationId Int      @map("organization_id")
-  customerId     Int?     @map("customer_id")
-  type           String   @default("customer_site") @db.VarChar(30) // hq | warehouse | customer_site
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
+  customerId     String?     @map("customer_id") @db.Uuid
+  type           String   @default("customer_site") @db.VarChar(30) 
   name           String   @db.VarChar(150)
   address        String?  @db.VarChar(200)
   city           String?  @db.VarChar(100)
@@ -153,8 +136,8 @@ model Location {
 }
 
 model DeliveryPoint {
-  id           Int      @id @default(autoincrement())
-  locationId   Int      @map("location_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  locationId   String      @map("location_id") @db.Uuid
   name         String   @db.VarChar(150)
   contactName  String?  @map("contact_name") @db.VarChar(150)
   contactPhone String?  @map("contact_phone") @db.VarChar(20)
@@ -168,15 +151,15 @@ model DeliveryPoint {
 }
 
 model User {
-  id             Int      @id @default(autoincrement())
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
   firstName      String   @map("first_name") @db.VarChar(100)
   lastName       String   @map("last_name") @db.VarChar(100)
   email          String   @unique @db.VarChar(150)
   phone          String?  @db.VarChar(20)
   passwordHash   String   @map("password_hash") @db.VarChar(100)
-  organizationId Int      @map("organization_id")
-  customerId     Int?     @map("customer_id")
-  technicianId   Int?     @map("technician_id")
+  organizationId String      @map("organization_id") @db.Uuid
+  customerId     String?     @map("customer_id") @db.Uuid
+  technicianId   String?     @map("technician_id") @db.Uuid
   tokenVersion   Int      @default(0)
   isActive       Boolean  @default(true) @map("is_active")
   // True for the org's owner/admin (the registrant). Gates org-user management
@@ -196,7 +179,7 @@ model User {
 }
 
 model Role {
-  id          Int     @id @default(autoincrement())
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
   name        String  @unique @db.VarChar(50)
   description String?
 
@@ -206,9 +189,9 @@ model Role {
 }
 
 model UserRole {
-  id         Int      @id @default(autoincrement())
-  userId     Int      @map("user_id")
-  roleId     Int      @map("role_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId     String      @map("user_id") @db.Uuid
+  roleId     String      @map("role_id") @db.Uuid
   assignedAt DateTime @default(now()) @map("assigned_at")
 
   user User @relation(fields: [userId], references: [id])
@@ -219,39 +202,36 @@ model UserRole {
 }
 
 model RefreshToken {
-  id        Int      @id @default(autoincrement())
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
   tokenHash String   @map("token_hash")
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
 
-  userId Int  @map("user_id")
+  userId String  @map("user_id") @db.Uuid
   user   User @relation(fields: [userId], references: [id])
 
   @@map("refresh_tokens")
 }
 
 model PasswordResetToken {
-  id        Int       @id @default(autoincrement())
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
   tokenHash String    @unique @map("token_hash")
   expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdAt DateTime  @default(now()) @map("created_at")
 
-  userId Int  @map("user_id")
+  userId String  @map("user_id") @db.Uuid
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("password_reset_tokens")
 }
 
-// Short-lived email verification codes (OTP). Not tied to a User row because
-// they gate account creation (register) as well as password reset — the
-// account may not exist yet. Keyed by email + purpose.
 enum OtpPurpose {
   REGISTER
   RESET_PASSWORD
 }
 model EmailOtp {
-  id         Int       @id @default(autoincrement())
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
   email      String
   purpose    OtpPurpose
   codeHash   String    @map("code_hash")
@@ -265,17 +245,9 @@ model EmailOtp {
   @@map("email_otps")
 }
 
-// ---------------------------------------------------------------------------
-// Field service operations
-//
-// Enum-like fields are stored as String columns (validated in DTOs) to match
-// the existing schema style. Business dates (due, scheduledDate, warranty
-// service dates, hireDate) are stored as ISO date strings to mirror the UI.
-// ---------------------------------------------------------------------------
-
 model Customer {
-  id             Int      @id @default(autoincrement())
-  organizationId Int      @map("organization_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
   name           String   @db.VarChar(150)
   contactName    String   @map("contact_name") @db.VarChar(150)
   email          String   @db.VarChar(150)
@@ -299,8 +271,8 @@ model Customer {
 }
 
 model Technician {
-  id             Int      @id @default(autoincrement())
-  organizationId Int      @map("organization_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
   name           String   @db.VarChar(150)
   role           String   @db.VarChar(80)
   status         String   @db.VarChar(30)
@@ -325,11 +297,11 @@ model Technician {
 }
 
 model Asset {
-  id              Int      @id @default(autoincrement())
-  organizationId  Int      @map("organization_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId  String      @map("organization_id") @db.Uuid
   name            String   @db.VarChar(150)
   serial          String   @db.VarChar(120)
-  customerId      Int?     @map("customer_id")
+  customerId      String?     @map("customer_id") @db.Uuid
   health          Int      @default(100)
   warranty        String   @db.VarChar(30)
   status          String   @db.VarChar(30)
@@ -342,8 +314,8 @@ model Asset {
   nextServiceDate String?  @map("next_service_date") @db.VarChar(40)
   notes           String?
   photoUrl        String?  @map("photo_url") @db.VarChar(500)
-  locationId      Int?     @map("location_id")
-  deliveryPointId Int?     @map("delivery_point_id")
+  locationId      String?     @map("location_id") @db.Uuid
+  deliveryPointId String?     @map("delivery_point_id") @db.Uuid
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
@@ -357,8 +329,8 @@ model Asset {
 }
 
 model Part {
-  id             Int      @id @default(autoincrement())
-  organizationId Int      @map("organization_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
   name           String   @db.VarChar(150)
   sku            String   @db.VarChar(80)
   category       String   @db.VarChar(40)
@@ -376,11 +348,11 @@ model Part {
 }
 
 model WorkOrder {
-  id             Int      @id @default(autoincrement())
-  organizationId Int      @map("organization_id")
-  customerId     Int?     @map("customer_id")
-  technicianId   Int?     @map("technician_id")
-  assetId        Int?     @map("asset_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
+  customerId     String?     @map("customer_id") @db.Uuid
+  technicianId   String?     @map("technician_id") @db.Uuid
+  assetId        String?     @map("asset_id") @db.Uuid
   priority       String   @db.VarChar(20)
   status         String   @db.VarChar(20)
   serviceType    String?  @map("service_type") @db.VarChar(40)
@@ -393,7 +365,7 @@ model WorkOrder {
   estimatedHours Float?   @map("estimated_hours")
   description    String?
   accepted       Boolean  @default(false)
-  locationId     Int?     @map("location_id")
+  locationId     String?     @map("location_id") @db.Uuid
   lat            Float?
   lng            Float?
   // SLA tracking
@@ -404,7 +376,7 @@ model WorkOrder {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  operatorId     Int?     @map("operator_id")
+  operatorId     String?     @map("operator_id") @db.Uuid
 
   organization Organization @relation(fields: [organizationId], references: [id])
   customer     Customer?    @relation(fields: [customerId], references: [id])
@@ -418,19 +390,16 @@ model WorkOrder {
   @@map("work_orders")
 }
 
-// Append-only audit trail for a work order: every status change, assignment,
-// acceptance and edit is recorded here so the detail view can render a full
-// history timeline.
 model WorkOrderEvent {
-  id          Int      @id @default(autoincrement())
-  workOrderId Int      @map("work_order_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  workOrderId String      @map("work_order_id") @db.Uuid
   // created | status_changed | assigned_technician | accepted |
   // assigned_operator | updated
   type        String   @db.VarChar(40)
   fromValue   String?  @map("from_value") @db.VarChar(150)
   toValue     String?  @map("to_value") @db.VarChar(150)
   note        String?
-  actorId     Int?     @map("actor_id")
+  actorId     String?     @map("actor_id") @db.Uuid
   actorName   String?  @map("actor_name") @db.VarChar(150)
   actorRole   String?  @map("actor_role") @db.VarChar(40)
   createdAt   DateTime @default(now()) @map("created_at")
@@ -440,19 +409,16 @@ model WorkOrderEvent {
   @@index([workOrderId])
   @@map("work_order_events")
 }
-
-// Append-only audit trail for a service case (created, status changes,
-// operator interest/assignment, conversion to a work order).
 model ServiceCaseEvent {
-  id            Int      @id @default(autoincrement())
-  serviceCaseId Int      @map("service_case_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  serviceCaseId String      @map("service_case_id") @db.Uuid
   // created | status_changed | operator_interest | operator_assigned |
   // converted | updated
   type          String   @db.VarChar(40)
   fromValue     String?  @map("from_value") @db.VarChar(150)
   toValue       String?  @map("to_value") @db.VarChar(150)
   note          String?
-  actorId       Int?     @map("actor_id")
+  actorId       String?     @map("actor_id") @db.Uuid
   actorName     String?  @map("actor_name") @db.VarChar(150)
   actorRole     String?  @map("actor_role") @db.VarChar(40)
   createdAt     DateTime @default(now()) @map("created_at")
@@ -463,17 +429,15 @@ model ServiceCaseEvent {
   @@map("service_case_events")
 }
 
-// Append-only audit trail for a technician (created, profile updates, status
-// changes).
 model TechnicianEvent {
-  id           Int      @id @default(autoincrement())
-  technicianId Int      @map("technician_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  technicianId String      @map("technician_id") @db.Uuid
   // created | updated | status_changed
   type         String   @db.VarChar(40)
   fromValue    String?  @map("from_value") @db.VarChar(150)
   toValue      String?  @map("to_value") @db.VarChar(150)
   note         String?
-  actorId      Int?     @map("actor_id")
+  actorId      String?     @map("actor_id") @db.Uuid
   actorName    String?  @map("actor_name") @db.VarChar(150)
   actorRole    String?  @map("actor_role") @db.VarChar(40)
   createdAt    DateTime @default(now()) @map("created_at")
@@ -485,9 +449,9 @@ model TechnicianEvent {
 }
 
 model ServiceCase {
-  id             Int      @id @default(autoincrement())
-  organizationId Int      @map("organization_id")
-  customerId     Int?     @map("customer_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
+  customerId     String?     @map("customer_id") @db.Uuid
   subject        String   @db.VarChar(200)
   description    String
   serviceType    String   @map("service_type") @db.VarChar(40)
@@ -495,16 +459,16 @@ model ServiceCase {
   location       String   @db.VarChar(200)
   status         String   @db.VarChar(20)
   category       String?  @db.VarChar(40)
-  locationId     Int?     @map("location_id")
-  operatorId     Int?     @map("operator_id")
+  locationId     String?     @map("location_id") @db.Uuid
+  operatorId     String?     @map("operator_id") @db.Uuid
   // Customer's preferred operator — an Operator *directory record* id, a soft
   // hint surfaced to dispatch.
-  preferredOperatorId  Int?  @map("preferred_operator_id")
+  preferredOperatorId  String?  @map("preferred_operator_id") @db.Uuid
   // Operator *organization* ids (tenants, type='operator') that opted in to
   // service this case, and the one a platform dispatcher finally assigned.
-  interestedOperatorIds Int[] @default([]) @map("interested_operator_ids")
-  assignedOperatorOrgId Int?  @map("assigned_operator_org_id")
-  workOrderId    Int?     @unique @map("work_order_id")
+  interestedOperatorIds String[] @default([]) @map("interested_operator_ids")
+  assignedOperatorOrgId String?  @map("assigned_operator_org_id") @db.Uuid
+  workOrderId    String?     @unique @map("work_order_id") @db.Uuid
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
@@ -518,8 +482,8 @@ model ServiceCase {
 }
 
 model Notification {
-  id             Int      @id @default(autoincrement())
-  organizationId Int      @map("organization_id")
+  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
   title          String   @db.VarChar(200)
   message        String
   type           String   @db.VarChar(20)

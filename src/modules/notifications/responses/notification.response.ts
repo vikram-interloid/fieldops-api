@@ -1,5 +1,5 @@
 export class NotificationResponse {
-    id: number;
+    id: string;
     title: string;
     message: string;
     type: string;

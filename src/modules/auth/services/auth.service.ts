@@ -367,7 +367,7 @@ export class AuthService {
     }
 
     async logout(
-        userId: number,
+        userId: string,
     ): Promise<void> {
         await this.refreshTokenService.deleteByUserId(
             userId,

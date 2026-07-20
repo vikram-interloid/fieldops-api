@@ -11,11 +11,11 @@ import { PART_MESSAGES } from '../constants/part.constants';
 export class PartsService {
     constructor(private readonly partsRepository: PartsRepository) {}
 
-    findAll(userId: number) {
+    findAll(userId: string) {
         return this.partsRepository.findAll(userId);
     }
 
-    async findById(userId: number, id: number): Promise<PartResponse> {
+    async findById(userId: string, id: string): Promise<PartResponse> {
         const part = await this.partsRepository.findById(userId, id);
 
         if (!part) {
@@ -25,13 +25,13 @@ export class PartsService {
         return part;
     }
 
-    create(userId: number, dto: CreatePartDto) {
+    create(userId: string, dto: CreatePartDto) {
         return this.partsRepository.create(userId, dto);
     }
 
     async update(
-        userId: number,
-        id: number,
+        userId: string,
+        id: string,
         dto: UpdatePartDto,
     ): Promise<PartResponse> {
         await this.findById(userId, id);
@@ -40,8 +40,8 @@ export class PartsService {
     }
 
     async adjustQuantity(
-        userId: number,
-        id: number,
+        userId: string,
+        id: string,
         dto: AdjustQuantityDto,
     ): Promise<PartResponse> {
         const part = await this.findById(userId, id);
@@ -51,7 +51,7 @@ export class PartsService {
         return this.partsRepository.updateQuantity(id, quantity);
     }
 
-    async delete(userId: number, id: number): Promise<void> {
+    async delete(userId: string, id: string): Promise<void> {
         await this.findById(userId, id);
 
         await this.partsRepository.delete(id);

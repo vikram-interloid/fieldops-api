@@ -11,7 +11,7 @@ export class RefreshTokenService {
     ) { }
 
     async save(
-        userId: number,
+        userId: string,
         refreshToken: string,
     ): Promise<void> {
         const tokenHash = await bcrypt.hash(refreshToken, 10);
@@ -28,7 +28,7 @@ export class RefreshTokenService {
     }
 
     async validate(
-        userId: number,
+        userId: string,
         refreshToken: string,
     ): Promise<boolean> {
         const refreshTokens = await this.prisma.refreshToken.findMany({
@@ -47,7 +47,7 @@ export class RefreshTokenService {
     }
 
     async deleteByUserId(
-        userId: number,
+        userId: string,
     ): Promise<void> {
         await this.prisma.refreshToken.deleteMany({
             where: {

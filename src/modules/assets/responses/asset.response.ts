@@ -1,8 +1,8 @@
 export class AssetResponse {
-    id: number;
+    id: string;
     name: string;
     serial: string;
-    customerId?: number | null;
+    customerId?: string | null;
     health: number;
     warranty: string;
     status: string;
@@ -15,8 +15,8 @@ export class AssetResponse {
     nextServiceDate?: string | null;
     notes?: string | null;
     photoUrl?: string | null;
-    locationId?: number | null;
-    deliveryPointId?: number | null;
+    locationId?: string | null;
+    deliveryPointId?: string | null;
     createdAt: Date;
     updatedAt: Date;
     customer?: { name: string } | null;

@@ -4,7 +4,7 @@ import {
     Delete,
     Get,
     Param,
-    ParseIntPipe,
+    ParseUUIDPipe,
     Patch,
     Post,
     UseGuards,
@@ -30,7 +30,7 @@ export class AssetsController {
     @Get(':id')
     findById(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.assetsService.findById(user.userId, id);
     }
@@ -46,7 +46,7 @@ export class AssetsController {
     @Patch(':id')
     update(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: UpdateAssetDto,
     ) {
         return this.assetsService.update(user.userId, id, dto);
@@ -55,7 +55,7 @@ export class AssetsController {
     @Delete(':id')
     remove(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.assetsService.delete(user.userId, id);
     }

@@ -4,7 +4,7 @@ import {
     Delete,
     Get,
     Param,
-    ParseIntPipe,
+    ParseUUIDPipe,
     Patch,
     Post,
     UseGuards,
@@ -50,7 +50,7 @@ export class ServiceCasesController {
     @Get(':id')
     findById(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.serviceCasesService.findById(user.userId, id);
     }
@@ -58,7 +58,7 @@ export class ServiceCasesController {
     @Get(':id/detail')
     findDetail(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.serviceCasesService.findDetail(user.userId, id);
     }
@@ -74,7 +74,7 @@ export class ServiceCasesController {
     @Patch(':id')
     update(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: UpdateCaseDto,
     ) {
         return this.serviceCasesService.update(
@@ -88,7 +88,7 @@ export class ServiceCasesController {
     @Patch(':id/status')
     setStatus(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: SetStatusDto,
     ) {
         return this.serviceCasesService.setStatus(
@@ -102,7 +102,7 @@ export class ServiceCasesController {
     @Post(':id/interest')
     expressInterest(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.serviceCasesService.expressInterest(
             user.userId,
@@ -114,7 +114,7 @@ export class ServiceCasesController {
     @Get(':id/interested-operators')
     interestedOperators(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.serviceCasesService.interestedOperators(user.userId, id);
     }
@@ -122,7 +122,7 @@ export class ServiceCasesController {
     @Get(':id/assignable-operators')
     assignableOperators(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.serviceCasesService.assignableOperators(user.userId, id);
     }
@@ -130,7 +130,7 @@ export class ServiceCasesController {
     @Post(':id/assign-operator')
     assignOperator(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: AssignOperatorDto,
     ) {
         return this.serviceCasesService.assignOperator(
@@ -144,7 +144,7 @@ export class ServiceCasesController {
     @Post(':id/convert')
     convert(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.serviceCasesService.convert(user.userId, id);
     }
@@ -152,7 +152,7 @@ export class ServiceCasesController {
     @Delete(':id')
     remove(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.serviceCasesService.delete(user.userId, id);
     }

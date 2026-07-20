@@ -3,7 +3,7 @@ import {
     Controller,
     Get,
     Param,
-    ParseIntPipe,
+    ParseUUIDPipe,
     Post,
     Put,
     UseGuards,
@@ -41,7 +41,7 @@ export class SlaController {
     @Post('work-orders/:id/respond')
     respond(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.slaService.respond(user.userId, id);
     }
@@ -49,7 +49,7 @@ export class SlaController {
     @Post('work-orders/:id/resolve')
     resolve(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.slaService.resolve(user.userId, id);
     }
@@ -57,7 +57,7 @@ export class SlaController {
     @Post('work-orders/:id/pause')
     pause(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.slaService.pause(user.userId, id);
     }
@@ -65,7 +65,7 @@ export class SlaController {
     @Post('work-orders/:id/resume')
     resume(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.slaService.resume(user.userId, id);
     }

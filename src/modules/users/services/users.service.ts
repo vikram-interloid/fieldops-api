@@ -13,7 +13,7 @@ import { RoleEnum } from "src/modules/auth/enums/role.enum";
 
 /** Prisma row shape returned by the repository's org-user selects. */
 type OrgUserRow = {
-    id: number;
+    id: string;
     firstName: string;
     lastName: string;
     email: string;
@@ -34,7 +34,7 @@ export class UsersService {
         return this.usersRepository.findAll();
     }
 
-    async findById(id: number): Promise<UserResponse> {
+    async findById(id: string): Promise<UserResponse> {
         const user = await this.usersRepository.findById(id);
 
         if (!user) {
@@ -53,7 +53,7 @@ export class UsersService {
         };
     }
     async update(
-        id: number,
+        id: string,
         dto: UpdateUserDto,
     ): Promise<UserResponse> {
         const user = await this.usersRepository.update(id, dto);
@@ -69,7 +69,7 @@ export class UsersService {
     }
 
     async delete(
-        id: number,
+        id: string,
     ) {
         await this.usersRepository.delete(id);
     }
@@ -90,7 +90,7 @@ export class UsersService {
     }
 
     /** Every user in the caller's organization (any member may view). */
-    async listOrgUsers(userId: number): Promise<UserResponse[]> {
+    async listOrgUsers(userId: string): Promise<UserResponse[]> {
         const { organizationId } = await this.usersRepository.getCaller(userId);
         const rows = await this.usersRepository.findAllInOrg(organizationId);
         return rows.map((r) => this.toOrgUser(r as OrgUserRow));
@@ -98,7 +98,7 @@ export class UsersService {
 
     /** Add a user to the caller's org — org admins only. */
     async createOrgUser(
-        userId: number,
+        userId: string,
         dto: CreateOrgUserDto,
     ): Promise<UserResponse> {
         const caller = await this.usersRepository.getCaller(userId);
@@ -133,7 +133,7 @@ export class UsersService {
     }
 
     /** Deactivate a user in the caller's org — org admins only. */
-    async deleteOrgUser(userId: number, id: number): Promise<UserResponse> {
+    async deleteOrgUser(userId: string, id: string): Promise<UserResponse> {
         const caller = await this.usersRepository.getCaller(userId);
         if (!caller.isOrgAdmin) {
             throw new ForbiddenException(
@@ -151,7 +151,7 @@ export class UsersService {
     }
 
     /** Member role default: Customer for customer orgs, else Technician. */
-    private async defaultRole(organizationId: number): Promise<string> {
+    private async defaultRole(organizationId: string): Promise<string> {
         const type = await this.usersRepository.orgType(organizationId);
         return type === 'customer' ? RoleEnum.CUSTOMER : RoleEnum.TECHNICIAN;
     }

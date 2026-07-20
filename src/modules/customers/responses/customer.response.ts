@@ -1,14 +1,14 @@
 export class CustomerDeliveryPointResponse {
-    id: number;
-    locationId: number;
+    id: string;
+    locationId: string;
     name: string;
     createdAt: Date;
     updatedAt: Date;
 }
 
 export class CustomerLocationResponse {
-    id: number;
-    customerId: number | null;
+    id: string;
+    customerId: string | null;
     name: string;
     address: string | null;
     city: string | null;
@@ -18,7 +18,7 @@ export class CustomerLocationResponse {
 }
 
 export class CustomerResponse {
-    id: number;
+    id: string;
     name: string;
     contactName: string;
     email: string;

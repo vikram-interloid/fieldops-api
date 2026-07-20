@@ -21,7 +21,7 @@ export class NotificationsRepository {
      * Resolves the organization the user belongs to. Every query is scoped to
      * this organization so tenants never see each other's records.
      */
-    private async resolveOrganizationId(userId: number): Promise<number> {
+    private async resolveOrganizationId(userId: string): Promise<string> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { organizationId: true },
@@ -34,7 +34,7 @@ export class NotificationsRepository {
         return user.organizationId;
     }
 
-    async findAll(userId: number) {
+    async findAll(userId: string) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.notification.findMany({
@@ -44,7 +44,7 @@ export class NotificationsRepository {
         });
     }
 
-    async findById(userId: number, id: number) {
+    async findById(userId: string, id: string) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.notification.findFirst({
@@ -53,7 +53,7 @@ export class NotificationsRepository {
         });
     }
 
-    async create(userId: number, dto: CreateNotificationDto) {
+    async create(userId: string, dto: CreateNotificationDto) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.notification.create({
@@ -62,7 +62,7 @@ export class NotificationsRepository {
         });
     }
 
-    markAsRead(id: number) {
+    markAsRead(id: string) {
         return this.prisma.notification.update({
             where: { id },
             data: { read: true },
@@ -70,7 +70,7 @@ export class NotificationsRepository {
         });
     }
 
-    async markAllAsRead(userId: number) {
+    async markAllAsRead(userId: string) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.notification.updateMany({
@@ -79,7 +79,7 @@ export class NotificationsRepository {
         });
     }
 
-    delete(id: number) {
+    delete(id: string) {
         return this.prisma.notification.delete({
             where: { id },
         });

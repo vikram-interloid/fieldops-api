@@ -4,7 +4,7 @@ import {
     Delete,
     Get,
     Param,
-    ParseIntPipe,
+    ParseUUIDPipe,
     Patch,
     Post,
     UseGuards,
@@ -42,7 +42,7 @@ export class AdminUsersController {
 
     @Patch(':id')
     update(
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: UpdateUserDto,
     ) {
         return this.usersSerivce.update(id, dto);
@@ -51,7 +51,7 @@ export class AdminUsersController {
     @Delete(':id')
     remove(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.usersSerivce.deleteOrgUser(user.userId, id);
     }

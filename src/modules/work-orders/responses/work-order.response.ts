@@ -1,8 +1,8 @@
 export class WorkOrderResponse {
-    id: number;
-    customerId?: number | null;
-    technicianId?: number | null;
-    assetId?: number | null;
+    id: string;
+    customerId?: string | null;
+    technicianId?: string | null;
+    assetId?: string | null;
     priority: string;
     status: string;
     serviceType?: string | null;

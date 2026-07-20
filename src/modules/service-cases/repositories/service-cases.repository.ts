@@ -9,7 +9,7 @@ import { CreateCaseDto } from '../dto/create-case.dto';
 import { UpdateCaseDto } from '../dto/update-case.dto';
 
 /** Who performed a service-case action, for the history trail. */
-export type CaseActor = { userId: number; role?: string };
+export type CaseActor = { userId: string; role?: string };
 
 const selectServiceCase = {
     id: true,
@@ -39,7 +39,7 @@ export class ServiceCasesRepository {
 
     /** Appends one entry to a case's history, resolving the actor name. */
     private async logEvent(
-        serviceCaseId: number,
+        serviceCaseId: string,
         type: string,
         opts: {
             from?: string | null;
@@ -74,7 +74,7 @@ export class ServiceCasesRepository {
      * Resolves the organization the user belongs to. Every query is scoped to
      * this organization so tenants never see each other's records.
      */
-    private async resolveOrganizationId(userId: number): Promise<number> {
+    private async resolveOrganizationId(userId: string): Promise<string> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { organizationId: true },
@@ -91,7 +91,7 @@ export class ServiceCasesRepository {
      * Read scope: platform staff (FieldOps) manage every tenant's cases, so
      * their reads aren't org-filtered; everyone else is scoped to their org.
      */
-    private async orgScope(userId: number): Promise<{ organizationId?: number }> {
+    private async orgScope(userId: string): Promise<{ organizationId?: string }> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: {
@@ -105,7 +105,7 @@ export class ServiceCasesRepository {
             : { organizationId: user.organizationId };
     }
 
-    async findAll(userId: number) {
+    async findAll(userId: string) {
         const scope = await this.orgScope(userId);
 
         return this.prisma.serviceCase.findMany({
@@ -115,7 +115,7 @@ export class ServiceCasesRepository {
         });
     }
 
-    async findById(userId: number, id: number) {
+    async findById(userId: string, id: string) {
         const scope = await this.orgScope(userId);
 
         return this.prisma.serviceCase.findFirst({
@@ -125,7 +125,7 @@ export class ServiceCasesRepository {
     }
 
     /** Case with resolved operator name + full history timeline. */
-    async findDetail(userId: number, id: number) {
+    async findDetail(userId: string, id: string) {
         const scope = await this.orgScope(userId);
 
         const sc = await this.prisma.serviceCase.findFirst({
@@ -161,7 +161,7 @@ export class ServiceCasesRepository {
         return { ...sc, operatorName };
     }
 
-    async create(userId: number, dto: CreateCaseDto, actor?: CaseActor) {
+    async create(userId: string, dto: CreateCaseDto, actor?: CaseActor) {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: {
@@ -210,7 +210,7 @@ export class ServiceCasesRepository {
     // ---- Operator marketplace (cross-org) ---------------------------------
 
     /** The caller's organization profile — kind + operator coverage. */
-    private async resolveOrgProfile(userId: number) {
+    private async resolveOrgProfile(userId: string) {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: {
@@ -231,7 +231,7 @@ export class ServiceCasesRepository {
     }
 
     /** Cases (any status, across tenants) assigned to the caller operator org. */
-    async findAssigned(userId: number) {
+    async findAssigned(userId: string) {
         const org = await this.resolveOrgProfile(userId);
 
         return this.prisma.serviceCase.findMany({
@@ -246,7 +246,7 @@ export class ServiceCasesRepository {
      * operator org's coverage: a matching category OR a location that mentions
      * the org's region. With no coverage set, all open unassigned cases show.
      */
-    async findAvailable(userId: number) {
+    async findAvailable(userId: string) {
         const org = await this.resolveOrgProfile(userId);
 
         const coverage: object[] = [
@@ -280,7 +280,7 @@ export class ServiceCasesRepository {
     }
 
     /** The caller operator org opts in to a case. */
-    async addInterest(userId: number, caseId: number, actor?: CaseActor) {
+    async addInterest(userId: string, caseId: string, actor?: CaseActor) {
         const org = await this.resolveOrgProfile(userId);
 
         const existing = await this.prisma.serviceCase.findUnique({
@@ -314,8 +314,8 @@ export class ServiceCasesRepository {
 
     /** Platform dispatcher assigns an operator org to the case. */
     async assignOperator(
-        caseId: number,
-        operatorOrgId: number,
+        caseId: string,
+        operatorOrgId: string,
         actor?: CaseActor,
     ) {
         const updated = await this.prisma.serviceCase.update({
@@ -355,7 +355,7 @@ export class ServiceCasesRepository {
     }
 
     /** Whether the caller belongs to the platform org (for dispatch actions). */
-    async isPlatform(userId: number): Promise<boolean> {
+    async isPlatform(userId: string): Promise<boolean> {
         const org = await this.resolveOrgProfile(userId);
         return org.type === 'platform';
     }
@@ -364,7 +364,7 @@ export class ServiceCasesRepository {
      * All operator orgs a dispatcher can assign to a case, flagged with whether
      * each expressed interest — so dispatch isn't limited to interested ones.
      */
-    async assignableOperators(caseId: number) {
+    async assignableOperators(caseId: string) {
         const sc = await this.prisma.serviceCase.findUnique({
             where: { id: caseId },
             select: { interestedOperatorIds: true },
@@ -380,7 +380,7 @@ export class ServiceCasesRepository {
     }
 
     /** Operator orgs (id, name, region) that opted in to the given case. */
-    async interestedOperators(caseId: number) {
+    async interestedOperators(caseId: string) {
         const sc = await this.prisma.serviceCase.findUnique({
             where: { id: caseId },
             select: { interestedOperatorIds: true },
@@ -393,7 +393,7 @@ export class ServiceCasesRepository {
         });
     }
 
-    async update(id: number, dto: UpdateCaseDto, actor?: CaseActor) {
+    async update(id: string, dto: UpdateCaseDto, actor?: CaseActor) {
         const updated = await this.prisma.serviceCase.update({
             where: { id },
             data: dto,
@@ -403,7 +403,7 @@ export class ServiceCasesRepository {
         return updated;
     }
 
-    async updateStatus(id: number, status: string, actor?: CaseActor) {
+    async updateStatus(id: string, status: string, actor?: CaseActor) {
         const current = await this.prisma.serviceCase.findUnique({
             where: { id },
             select: { status: true },
@@ -421,7 +421,7 @@ export class ServiceCasesRepository {
         return updated;
     }
 
-    delete(id: number) {
+    delete(id: string) {
         return this.prisma.serviceCase.delete({
             where: { id },
         });
@@ -432,7 +432,7 @@ export class ServiceCasesRepository {
      * the same organization as the case, then the case is updated to reference
      * the new work order and marked as 'Converted'.
      */
-    async convert(userId: number, id: number) {
+    async convert(userId: string, id: string) {
         const scope = await this.orgScope(userId);
 
         const serviceCase = await this.prisma.serviceCase.findFirst({

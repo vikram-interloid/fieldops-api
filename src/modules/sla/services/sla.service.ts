@@ -14,7 +14,7 @@ type PolicyMap = Record<
 >;
 
 type WorkOrderSla = {
-    id: number;
+    id: string;
     priority: string;
     status: string;
     createdAt: Date;
@@ -31,7 +31,7 @@ export class SlaService {
     constructor(private readonly slaRepository: SlaRepository) {}
 
     /** Returns the org's policies, backfilling defaults for any missing priority. */
-    async getPolicies(userId: number) {
+    async getPolicies(userId: string) {
         const organizationId =
             await this.slaRepository.resolveOrganizationId(userId);
         const existing = await this.slaRepository.findPolicies(organizationId);
@@ -49,7 +49,7 @@ export class SlaService {
         });
     }
 
-    async updatePolicies(userId: number, dto: UpdatePoliciesDto) {
+    async updatePolicies(userId: string, dto: UpdatePoliciesDto) {
         const organizationId =
             await this.slaRepository.resolveOrganizationId(userId);
         for (const p of dto.policies) {
@@ -114,7 +114,7 @@ export class SlaService {
         return 'on_track';
     }
 
-    async getSummary(userId: number) {
+    async getSummary(userId: string) {
         const organizationId =
             await this.slaRepository.resolveOrganizationId(userId);
         const policies = await this.getPolicies(userId);
@@ -173,7 +173,7 @@ export class SlaService {
 
     // ----- per-work-order actions ------------------------------------------
 
-    private async requireWorkOrder(userId: number, id: number) {
+    private async requireWorkOrder(userId: string, id: string) {
         const organizationId =
             await this.slaRepository.resolveOrganizationId(userId);
         const wo = await this.slaRepository.findWorkOrderInOrg(
@@ -184,7 +184,7 @@ export class SlaService {
         return wo;
     }
 
-    async respond(userId: number, id: number) {
+    async respond(userId: string, id: string) {
         const wo = await this.requireWorkOrder(userId, id);
         if (wo.respondedAt) return wo;
         return this.slaRepository.updateWorkOrderSla(id, {
@@ -193,7 +193,7 @@ export class SlaService {
         });
     }
 
-    async resolve(userId: number, id: number) {
+    async resolve(userId: string, id: string) {
         const wo = await this.requireWorkOrder(userId, id);
         // Closing while paused: fold the open pause into accumulated paused time.
         const extra = wo.slaPausedAt
@@ -207,7 +207,7 @@ export class SlaService {
         });
     }
 
-    async pause(userId: number, id: number) {
+    async pause(userId: string, id: string) {
         const wo = await this.requireWorkOrder(userId, id);
         if (wo.slaPausedAt || wo.resolvedAt) return wo;
         return this.slaRepository.updateWorkOrderSla(id, {
@@ -215,7 +215,7 @@ export class SlaService {
         });
     }
 
-    async resume(userId: number, id: number) {
+    async resume(userId: string, id: string) {
         const wo = await this.requireWorkOrder(userId, id);
         if (!wo.slaPausedAt) return wo;
         const extra = Date.now() - wo.slaPausedAt.getTime();

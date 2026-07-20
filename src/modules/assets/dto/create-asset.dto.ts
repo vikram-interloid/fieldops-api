@@ -46,7 +46,7 @@ export class CreateAssetDto {
 
     @IsOptional()
     @IsInt()
-    customerId?: number;
+    customerId?: string;
 
     @IsOptional()
     @IsString()
@@ -95,9 +95,9 @@ export class CreateAssetDto {
 
     @IsOptional()
     @IsInt()
-    locationId?: number;
+    locationId?: string;
 
     @IsOptional()
     @IsInt()
-    deliveryPointId?: number;
+    deliveryPointId?: string;
 }

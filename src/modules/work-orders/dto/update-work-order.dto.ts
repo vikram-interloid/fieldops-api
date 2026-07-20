@@ -37,15 +37,15 @@ export class UpdateWorkOrderDto {
 
     @IsOptional()
     @IsInt()
-    customerId?: number;
+    customerId?: string;
 
     @IsOptional()
     @IsInt()
-    technicianId?: number;
+    technicianId?: string;
 
     @IsOptional()
     @IsInt()
-    assetId?: number;
+    assetId?: string;
 
     @IsOptional()
     @IsString()

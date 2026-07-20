@@ -3,7 +3,7 @@ import {
     Controller,
     Delete,
     Param,
-    ParseIntPipe,
+    ParseUUIDPipe,
     Patch,
     Post,
     UseGuards,
@@ -27,7 +27,7 @@ export class CustomerLocationsController {
     @Post('customers/:customerId/locations')
     createLocation(
         @CurrentUser() user: AuthUser,
-        @Param('customerId', ParseIntPipe) customerId: number,
+        @Param('customerId', ParseUUIDPipe) customerId: string,
         @Body() dto: CreateLocationDto,
     ) {
         return this.customerLocationsService.createLocation(
@@ -40,7 +40,7 @@ export class CustomerLocationsController {
     @Patch('locations/:id')
     updateLocation(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: UpdateLocationDto,
     ) {
         return this.customerLocationsService.updateLocation(
@@ -53,7 +53,7 @@ export class CustomerLocationsController {
     @Delete('locations/:id')
     removeLocation(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.customerLocationsService.deleteLocation(user.userId, id);
     }
@@ -61,7 +61,7 @@ export class CustomerLocationsController {
     @Post('locations/:locationId/delivery-points')
     createDeliveryPoint(
         @CurrentUser() user: AuthUser,
-        @Param('locationId', ParseIntPipe) locationId: number,
+        @Param('locationId', ParseUUIDPipe) locationId: string,
         @Body() dto: CreateDeliveryPointDto,
     ) {
         return this.customerLocationsService.createDeliveryPoint(
@@ -74,7 +74,7 @@ export class CustomerLocationsController {
     @Delete('delivery-points/:id')
     removeDeliveryPoint(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.customerLocationsService.deleteDeliveryPoint(
             user.userId,

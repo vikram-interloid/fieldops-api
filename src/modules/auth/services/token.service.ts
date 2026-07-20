@@ -26,7 +26,7 @@ export class TokenService {
     }
 
     generateRefreshToken(
-        userId: number,
+        userId: string,
     ): string {
         return this.jwtService.sign(
             {
@@ -45,7 +45,7 @@ export class TokenService {
 
     verifyRefreshToken(
         refreshToken: string,
-    ): { sub: number } {
+    ): { sub: string } {
         return this.jwtService.verify(
             refreshToken,
             {

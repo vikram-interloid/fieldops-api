@@ -25,7 +25,7 @@ export class LocationsRepository {
     constructor(private readonly prisma: PrismaService) {}
 
     /** Resolves the org the user belongs to so every query stays tenant-scoped. */
-    private async resolveOrganizationId(userId: number): Promise<number> {
+    private async resolveOrganizationId(userId: string): Promise<string> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             select: { organizationId: true },
@@ -38,7 +38,7 @@ export class LocationsRepository {
         return user.organizationId;
     }
 
-    async findAll(userId: number) {
+    async findAll(userId: string) {
         const organizationId = await this.resolveOrganizationId(userId);
 
         return this.prisma.location.findMany({

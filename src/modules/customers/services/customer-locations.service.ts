@@ -14,8 +14,8 @@ export class CustomerLocationsService {
     ) {}
 
     async createLocation(
-        userId: number,
-        customerId: number,
+        userId: string,
+        customerId: string,
         dto: CreateLocationDto,
     ): Promise<CustomerLocationResponse> {
         // Ensure the parent customer is within the user's organization.
@@ -36,8 +36,8 @@ export class CustomerLocationsService {
     }
 
     async updateLocation(
-        userId: number,
-        id: number,
+        userId: string,
+        id: string,
         dto: UpdateLocationDto,
     ): Promise<CustomerLocationResponse> {
         await this.ensureLocationInOrg(userId, id);
@@ -45,15 +45,15 @@ export class CustomerLocationsService {
         return this.customerLocationsRepository.updateLocation(id, dto);
     }
 
-    async deleteLocation(userId: number, id: number): Promise<void> {
+    async deleteLocation(userId: string, id: string): Promise<void> {
         await this.ensureLocationInOrg(userId, id);
 
         await this.customerLocationsRepository.deleteLocation(id);
     }
 
     async createDeliveryPoint(
-        userId: number,
-        locationId: number,
+        userId: string,
+        locationId: string,
         dto: CreateDeliveryPointDto,
     ) {
         await this.ensureLocationInOrg(userId, locationId);
@@ -64,7 +64,7 @@ export class CustomerLocationsService {
         );
     }
 
-    async deleteDeliveryPoint(userId: number, id: number): Promise<void> {
+    async deleteDeliveryPoint(userId: string, id: string): Promise<void> {
         const deliveryPoint =
             await this.customerLocationsRepository.findDeliveryPointInOrg(
                 userId,
@@ -81,8 +81,8 @@ export class CustomerLocationsService {
     }
 
     private async ensureLocationInOrg(
-        userId: number,
-        locationId: number,
+        userId: string,
+        locationId: string,
     ): Promise<void> {
         const location =
             await this.customerLocationsRepository.findLocationInOrg(

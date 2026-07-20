@@ -4,7 +4,7 @@ import {
     Delete,
     Get,
     Param,
-    ParseIntPipe,
+    ParseUUIDPipe,
     Patch,
     Post,
     UseGuards,
@@ -37,7 +37,7 @@ export class WorkOrdersController {
     @Get(':id')
     findById(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.workOrdersService.findById(user.userId, id);
     }
@@ -45,7 +45,7 @@ export class WorkOrdersController {
     @Get(':id/detail')
     findDetail(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.workOrdersService.findDetail(user.userId, id);
     }
@@ -61,7 +61,7 @@ export class WorkOrdersController {
     @Patch(':id')
     update(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: UpdateWorkOrderDto,
     ) {
         return this.workOrdersService.update(user.userId, id, dto, actorOf(user));
@@ -70,7 +70,7 @@ export class WorkOrdersController {
     @Patch(':id/status')
     setStatus(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: SetStatusDto,
     ) {
         return this.workOrdersService.setStatus(
@@ -84,7 +84,7 @@ export class WorkOrdersController {
     @Patch(':id/assign')
     assign(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: AssignDto,
     ) {
         return this.workOrdersService.assign(user.userId, id, dto, actorOf(user));
@@ -93,7 +93,7 @@ export class WorkOrdersController {
     @Patch(':id/accept')
     accept(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.workOrdersService.accept(user.userId, id, actorOf(user));
     }
@@ -101,7 +101,7 @@ export class WorkOrdersController {
     @Delete(':id')
     remove(
         @CurrentUser() user: AuthUser,
-        @Param('id', ParseIntPipe) id: number,
+        @Param('id', ParseUUIDPipe) id: string,
     ) {
         return this.workOrdersService.delete(user.userId, id);
     }
