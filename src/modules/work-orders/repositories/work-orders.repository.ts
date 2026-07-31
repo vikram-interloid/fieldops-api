@@ -35,6 +35,7 @@ const selectWorkOrder = {
     customer: { select: { name: true } },
     technician: { select: { name: true } },
     asset: { select: { name: true } },
+    workOrderNo: true,
 };
 
 @Injectable()

@@ -34,8 +34,6 @@ export class ServiceCasesController {
         return this.serviceCasesService.findAll(user.userId);
     }
 
-    // Operator marketplace: region/category-matched, unassigned open cases.
-    // Declared before ':id' so "available" isn't parsed as a case id.
     @Get('available')
     findAvailable(@CurrentUser() user: AuthUser) {
         return this.serviceCasesService.findAvailable(user.userId);

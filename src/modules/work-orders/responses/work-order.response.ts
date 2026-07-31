@@ -1,5 +1,6 @@
 export class WorkOrderResponse {
     id: string;
+    workOrderNo: string;
     customerId?: string | null;
     technicianId?: string | null;
     assetId?: string | null;

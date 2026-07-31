@@ -14,15 +14,15 @@ datasource db {
 }
 
 model Organization {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  name      String   @db.VarChar(150)
-  industry  String?  @db.VarChar(100)
+  id                 String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  name               String    @db.VarChar(150)
+  industry           String?   @db.VarChar(100)
   // Account kind:
   //  - 'platform': the FieldOps control-plane tenant (staff manage everything)
   //  - 'customer': a brand/client that owns sites & assets and raises cases
   //  - 'operator': a service company that hires technicians & covers areas
   // 'customer'/'operator' are chosen at registration; 'platform' is seeded.
-  type       String   @default("customer") @db.VarChar(20)
+  type               String    @default("customer") @db.VarChar(20)
   // Onboarding verification: self-registered customer/operator orgs start
   // 'pending' and a platform admin reviews their location before 'verified'.
   // 'rejected' blocks them. The seeded platform org is 'verified'.
@@ -30,10 +30,10 @@ model Organization {
   verifiedAt         DateTime? @map("verified_at")
   verificationNote   String?   @map("verification_note") @db.VarChar(300)
   // Operator profile (only meaningful when type = 'operator').
-  categories String[] @default([])
-  region     String?  @db.VarChar(120)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  categories         String[]  @default([])
+  region             String?   @db.VarChar(120)
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
 
   users     User[]
   locations Location[]
@@ -53,9 +53,9 @@ model Organization {
 }
 
 model Operator {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  organizationId       String      @map("organization_id")@db.Uuid
-  tenantOrganizationId String?     @map("tenant_organization_id") @db.Uuid
+  id                   String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId       String   @map("organization_id") @db.Uuid
+  tenantOrganizationId String?  @map("tenant_organization_id") @db.Uuid
   name                 String   @db.VarChar(150)
   categories           String[] // vending | coffee | hvac | refrigeration | electrical | general
   status               String   @default("Active") @db.VarChar(30)
@@ -76,9 +76,9 @@ model Operator {
 }
 
 model ServiceArea {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  organizationId String      @map("organization_id") @db.Uuid
-  operatorId     String      @map("operator_id") @db.Uuid
+  id             String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  operatorId     String   @map("operator_id") @db.Uuid
   category       String   @db.VarChar(40)
   region         String?  @db.VarChar(80)
   postalPrefix   String?  @map("postal_prefix") @db.VarChar(12)
@@ -95,8 +95,8 @@ model ServiceArea {
 }
 
 model SlaPolicy {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  organizationId    String      @map("organization_id") @db.Uuid
+  id                String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId    String   @map("organization_id") @db.Uuid
   priority          String   @db.VarChar(20) // Low | Medium | High | Critical
   responseMinutes   Int      @map("response_minutes")
   resolutionMinutes Int      @map("resolution_minutes")
@@ -110,10 +110,10 @@ model SlaPolicy {
 }
 
 model Location {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  organizationId String      @map("organization_id") @db.Uuid
-  customerId     String?     @map("customer_id") @db.Uuid
-  type           String   @default("customer_site") @db.VarChar(30) 
+  id             String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  customerId     String?  @map("customer_id") @db.Uuid
+  type           String   @default("customer_site") @db.VarChar(30)
   name           String   @db.VarChar(150)
   address        String?  @db.VarChar(200)
   city           String?  @db.VarChar(100)
@@ -136,8 +136,8 @@ model Location {
 }
 
 model DeliveryPoint {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  locationId   String      @map("location_id") @db.Uuid
+  id           String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  locationId   String   @map("location_id") @db.Uuid
   name         String   @db.VarChar(150)
   contactName  String?  @map("contact_name") @db.VarChar(150)
   contactPhone String?  @map("contact_phone") @db.VarChar(20)
@@ -151,15 +151,15 @@ model DeliveryPoint {
 }
 
 model User {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  id             String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   firstName      String   @map("first_name") @db.VarChar(100)
   lastName       String   @map("last_name") @db.VarChar(100)
   email          String   @unique @db.VarChar(150)
   phone          String?  @db.VarChar(20)
   passwordHash   String   @map("password_hash") @db.VarChar(100)
-  organizationId String      @map("organization_id") @db.Uuid
-  customerId     String?     @map("customer_id") @db.Uuid
-  technicianId   String?     @map("technician_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  customerId     String?  @map("customer_id") @db.Uuid
+  technicianId   String?  @map("technician_id") @db.Uuid
   tokenVersion   Int      @default(0)
   isActive       Boolean  @default(true) @map("is_active")
   // True for the org's owner/admin (the registrant). Gates org-user management
@@ -168,18 +168,18 @@ model User {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
 
-  organization  Organization   @relation(fields: [organizationId], references: [id])
-  customer      Customer?      @relation(fields: [customerId], references: [id])
-  technician    Technician?    @relation(fields: [technicianId], references: [id])
-  userRoles     UserRole[]
-  refreshTokens RefreshToken[]
+  organization        Organization         @relation(fields: [organizationId], references: [id])
+  customer            Customer?            @relation(fields: [customerId], references: [id])
+  technician          Technician?          @relation(fields: [technicianId], references: [id])
+  userRoles           UserRole[]
+  refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
 
   @@map("users")
 }
 
 model Role {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  id          String  @id @default(dbgenerated("uuidv7()")) @db.Uuid
   name        String  @unique @db.VarChar(50)
   description String?
 
@@ -189,9 +189,9 @@ model Role {
 }
 
 model UserRole {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  userId     String      @map("user_id") @db.Uuid
-  roleId     String      @map("role_id") @db.Uuid
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  roleId     String   @map("role_id") @db.Uuid
   assignedAt DateTime @default(now()) @map("assigned_at")
 
   user User @relation(fields: [userId], references: [id])
@@ -202,26 +202,26 @@ model UserRole {
 }
 
 model RefreshToken {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
   tokenHash String   @map("token_hash")
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
 
-  userId String  @map("user_id") @db.Uuid
-  user   User @relation(fields: [userId], references: [id])
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
 
   @@map("refresh_tokens")
 }
 
 model PasswordResetToken {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  id        String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
   tokenHash String    @unique @map("token_hash")
   expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdAt DateTime  @default(now()) @map("created_at")
 
-  userId String  @map("user_id") @db.Uuid
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("password_reset_tokens")
 }
@@ -230,24 +230,26 @@ enum OtpPurpose {
   REGISTER
   RESET_PASSWORD
 }
+
 model EmailOtp {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  id         String     @id @default(dbgenerated("uuidv7()")) @db.Uuid
   email      String
   purpose    OtpPurpose
-  codeHash   String    @map("code_hash")
-  attempts   Int       @default(0)
-  verifiedAt DateTime? @map("verified_at") 
-  consumedAt DateTime? @map("consumed_at")
-  expiresAt  DateTime  @map("expires_at")
-  createdAt  DateTime  @default(now()) @map("created_at")
+  codeHash   String     @map("code_hash")
+  attempts   Int        @default(0)
+  verifiedAt DateTime?  @map("verified_at")
+  consumedAt DateTime?  @map("consumed_at")
+  expiresAt  DateTime   @map("expires_at")
+  createdAt  DateTime   @default(now()) @map("created_at")
 
   @@unique([email, purpose])
   @@map("email_otps")
 }
 
 model Customer {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  organizationId String      @map("organization_id") @db.Uuid
+  id             String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  customerNo     String   @unique @default(dbgenerated("next_customer_no()"))
+  organizationId String   @map("organization_id") @db.Uuid
   name           String   @db.VarChar(150)
   contactName    String   @map("contact_name") @db.VarChar(150)
   email          String   @db.VarChar(150)
@@ -271,8 +273,9 @@ model Customer {
 }
 
 model Technician {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  organizationId String      @map("organization_id") @db.Uuid
+  id             String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  technicianNo   String   @unique @default(dbgenerated("next_technician_no()"))
+  organizationId String   @map("organization_id") @db.Uuid
   name           String   @db.VarChar(150)
   role           String   @db.VarChar(80)
   status         String   @db.VarChar(30)
@@ -288,7 +291,7 @@ model Technician {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  organization Organization @relation(fields: [organizationId], references: [id])
+  organization Organization      @relation(fields: [organizationId], references: [id])
   workOrders   WorkOrder[]
   users        User[]
   events       TechnicianEvent[]
@@ -297,11 +300,12 @@ model Technician {
 }
 
 model Asset {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  organizationId  String      @map("organization_id") @db.Uuid
+  id              String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  assetNo         String   @unique @default(dbgenerated("next_asset_no()"))
+  organizationId  String   @map("organization_id") @db.Uuid
   name            String   @db.VarChar(150)
   serial          String   @db.VarChar(120)
-  customerId      String?     @map("customer_id") @db.Uuid
+  customerId      String?  @map("customer_id") @db.Uuid
   health          Int      @default(100)
   warranty        String   @db.VarChar(30)
   status          String   @db.VarChar(30)
@@ -314,8 +318,8 @@ model Asset {
   nextServiceDate String?  @map("next_service_date") @db.VarChar(40)
   notes           String?
   photoUrl        String?  @map("photo_url") @db.VarChar(500)
-  locationId      String?     @map("location_id") @db.Uuid
-  deliveryPointId String?     @map("delivery_point_id") @db.Uuid
+  locationId      String?  @map("location_id") @db.Uuid
+  deliveryPointId String?  @map("delivery_point_id") @db.Uuid
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
@@ -329,8 +333,8 @@ model Asset {
 }
 
 model Part {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  organizationId String      @map("organization_id") @db.Uuid
+  id             String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
   name           String   @db.VarChar(150)
   sku            String   @db.VarChar(80)
   category       String   @db.VarChar(40)
@@ -348,42 +352,42 @@ model Part {
 }
 
 model WorkOrder {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  organizationId String      @map("organization_id") @db.Uuid
-  customerId     String?     @map("customer_id") @db.Uuid
-  technicianId   String?     @map("technician_id") @db.Uuid
-  assetId        String?     @map("asset_id") @db.Uuid
-  priority       String   @db.VarChar(20)
-  status         String   @db.VarChar(20)
-  serviceType    String?  @map("service_type") @db.VarChar(40)
-  location       String?  @db.VarChar(200)
-  contactName    String?  @map("contact_name") @db.VarChar(150)
-  contactPhone   String?  @map("contact_phone") @db.VarChar(30)
-  contactEmail   String?  @map("contact_email") @db.VarChar(150)
-  due            String   @db.VarChar(40)
-  scheduledDate  String?  @map("scheduled_date") @db.VarChar(40)
-  estimatedHours Float?   @map("estimated_hours")
+  id             String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  workOrderNo    String    @unique @default(dbgenerated("next_work_order_no()"))
+  organizationId String    @map("organization_id") @db.Uuid
+  customerId     String?   @map("customer_id") @db.Uuid
+  technicianId   String?   @map("technician_id") @db.Uuid
+  assetId        String?   @map("asset_id") @db.Uuid
+  priority       String    @db.VarChar(20)
+  status         String    @db.VarChar(20)
+  serviceType    String?   @map("service_type") @db.VarChar(40)
+  location       String?   @db.VarChar(200)
+  contactName    String?   @map("contact_name") @db.VarChar(150)
+  contactPhone   String?   @map("contact_phone") @db.VarChar(30)
+  contactEmail   String?   @map("contact_email") @db.VarChar(150)
+  due            String    @db.VarChar(40)
+  scheduledDate  String?   @map("scheduled_date") @db.VarChar(40)
+  estimatedHours Float?    @map("estimated_hours")
   description    String?
-  accepted       Boolean  @default(false)
-  locationId     String?     @map("location_id") @db.Uuid
+  accepted       Boolean   @default(false)
+  locationId     String?   @map("location_id") @db.Uuid
   lat            Float?
   lng            Float?
-  // SLA tracking
   respondedAt    DateTime? @map("responded_at")
   resolvedAt     DateTime? @map("resolved_at")
   slaPausedAt    DateTime? @map("sla_paused_at")
   slaPausedMs    Int       @default(0) @map("sla_paused_ms")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  operatorId     String?     @map("operator_id") @db.Uuid
+  operatorId String? @map("operator_id") @db.Uuid
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  customer     Customer?    @relation(fields: [customerId], references: [id])
-  technician   Technician?  @relation(fields: [technicianId], references: [id])
-  asset        Asset?       @relation(fields: [assetId], references: [id])
-  site         Location?    @relation(fields: [locationId], references: [id])
-  operator     Operator?    @relation(fields: [operatorId], references: [id])
+  organization Organization     @relation(fields: [organizationId], references: [id])
+  customer     Customer?        @relation(fields: [customerId], references: [id])
+  technician   Technician?      @relation(fields: [technicianId], references: [id])
+  asset        Asset?           @relation(fields: [assetId], references: [id])
+  site         Location?        @relation(fields: [locationId], references: [id])
+  operator     Operator?        @relation(fields: [operatorId], references: [id])
   serviceCase  ServiceCase?
   events       WorkOrderEvent[]
 
@@ -391,15 +395,13 @@ model WorkOrder {
 }
 
 model WorkOrderEvent {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  workOrderId String      @map("work_order_id") @db.Uuid
-  // created | status_changed | assigned_technician | accepted |
-  // assigned_operator | updated
+  id          String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  workOrderId String   @map("work_order_id") @db.Uuid
   type        String   @db.VarChar(40)
   fromValue   String?  @map("from_value") @db.VarChar(150)
   toValue     String?  @map("to_value") @db.VarChar(150)
   note        String?
-  actorId     String?     @map("actor_id") @db.Uuid
+  actorId     String?  @map("actor_id") @db.Uuid
   actorName   String?  @map("actor_name") @db.VarChar(150)
   actorRole   String?  @map("actor_role") @db.VarChar(40)
   createdAt   DateTime @default(now()) @map("created_at")
@@ -409,16 +411,17 @@ model WorkOrderEvent {
   @@index([workOrderId])
   @@map("work_order_events")
 }
+
 model ServiceCaseEvent {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  serviceCaseId String      @map("service_case_id") @db.Uuid
+  id            String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  serviceCaseId String   @map("service_case_id") @db.Uuid
   // created | status_changed | operator_interest | operator_assigned |
   // converted | updated
   type          String   @db.VarChar(40)
   fromValue     String?  @map("from_value") @db.VarChar(150)
   toValue       String?  @map("to_value") @db.VarChar(150)
   note          String?
-  actorId       String?     @map("actor_id") @db.Uuid
+  actorId       String?  @map("actor_id") @db.Uuid
   actorName     String?  @map("actor_name") @db.VarChar(150)
   actorRole     String?  @map("actor_role") @db.VarChar(40)
   createdAt     DateTime @default(now()) @map("created_at")
@@ -430,14 +433,14 @@ model ServiceCaseEvent {
 }
 
 model TechnicianEvent {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  technicianId String      @map("technician_id") @db.Uuid
+  id           String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  technicianId String   @map("technician_id") @db.Uuid
   // created | updated | status_changed
   type         String   @db.VarChar(40)
   fromValue    String?  @map("from_value") @db.VarChar(150)
   toValue      String?  @map("to_value") @db.VarChar(150)
   note         String?
-  actorId      String?     @map("actor_id") @db.Uuid
+  actorId      String?  @map("actor_id") @db.Uuid
   actorName    String?  @map("actor_name") @db.VarChar(150)
   actorRole    String?  @map("actor_role") @db.VarChar(40)
   createdAt    DateTime @default(now()) @map("created_at")
@@ -449,41 +452,42 @@ model TechnicianEvent {
 }
 
 model ServiceCase {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  organizationId String      @map("organization_id") @db.Uuid
-  customerId     String?     @map("customer_id") @db.Uuid
-  subject        String   @db.VarChar(200)
-  description    String
-  serviceType    String   @map("service_type") @db.VarChar(40)
-  priority       String   @db.VarChar(20)
-  location       String   @db.VarChar(200)
-  status         String   @db.VarChar(20)
-  category       String?  @db.VarChar(40)
-  locationId     String?     @map("location_id") @db.Uuid
-  operatorId     String?     @map("operator_id") @db.Uuid
+  id                    String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  caseNo                String   @unique @default(dbgenerated("next_service_case_no()"))
+  organizationId        String   @map("organization_id") @db.Uuid
+  customerId            String?  @map("customer_id") @db.Uuid
+  subject               String   @db.VarChar(200)
+  description           String
+  serviceType           String   @map("service_type") @db.VarChar(40)
+  priority              String   @db.VarChar(20)
+  location              String   @db.VarChar(200)
+  status                String   @db.VarChar(20)
+  category              String?  @db.VarChar(40)
+  locationId            String?  @map("location_id") @db.Uuid
+  operatorId            String?  @map("operator_id") @db.Uuid
   // Customer's preferred operator — an Operator *directory record* id, a soft
   // hint surfaced to dispatch.
-  preferredOperatorId  String?  @map("preferred_operator_id") @db.Uuid
+  preferredOperatorId   String?  @map("preferred_operator_id") @db.Uuid
   // Operator *organization* ids (tenants, type='operator') that opted in to
   // service this case, and the one a platform dispatcher finally assigned.
   interestedOperatorIds String[] @default([]) @map("interested_operator_ids")
   assignedOperatorOrgId String?  @map("assigned_operator_org_id") @db.Uuid
-  workOrderId    String?     @unique @map("work_order_id") @db.Uuid
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  workOrderId           String?  @unique @map("work_order_id") @db.Uuid
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
 
-  organization Organization @relation(fields: [organizationId], references: [id])
-  customer     Customer?    @relation(fields: [customerId], references: [id])
-  operator     Operator?    @relation(fields: [operatorId], references: [id])
-  workOrder    WorkOrder?   @relation(fields: [workOrderId], references: [id])
+  organization Organization       @relation(fields: [organizationId], references: [id])
+  customer     Customer?          @relation(fields: [customerId], references: [id])
+  operator     Operator?          @relation(fields: [operatorId], references: [id])
+  workOrder    WorkOrder?         @relation(fields: [workOrderId], references: [id])
   events       ServiceCaseEvent[]
 
   @@map("service_cases")
 }
 
 model Notification {
-  id String @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  organizationId String      @map("organization_id") @db.Uuid
+  id             String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
   title          String   @db.VarChar(200)
   message        String
   type           String   @db.VarChar(20)

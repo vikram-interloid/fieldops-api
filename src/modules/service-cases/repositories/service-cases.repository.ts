@@ -28,6 +28,8 @@ const selectServiceCase = {
     createdAt: true,
     updatedAt: true,
     customer: { select: { name: true } },
+    caseNo: true,
+    workOrder: { select: { workOrderNo: true } },
 };
 
 /** Case statuses that are still open to operator interest / dispatch. */
@@ -241,18 +243,10 @@ export class ServiceCasesRepository {
         });
     }
 
-    /**
-     * Open, unassigned cases (across all tenants) that match the caller
-     * operator org's coverage: a matching category OR a location that mentions
-     * the org's region. With no coverage set, all open unassigned cases show.
-     */
     async findAvailable(userId: string) {
         const org = await this.resolveOrgProfile(userId);
 
         const coverage: object[] = [
-            // Unclassified requests (e.g. customer-raised cases with no
-            // category yet) surface to every operator so dispatch can route
-            // them; classified/region cases narrow to matching operators.
             { category: null },
             { category: '' },
         ];
@@ -269,8 +263,6 @@ export class ServiceCasesRepository {
             where: {
                 status: { in: OPEN_STATUSES },
                 assignedOperatorOrgId: null,
-                // An operator org never has its own cases, but exclude them
-                // defensively so the pool is strictly other tenants' work.
                 organizationId: { not: org.id },
                 OR: coverage,
             },
@@ -279,7 +271,6 @@ export class ServiceCasesRepository {
         });
     }
 
-    /** The caller operator org opts in to a case. */
     async addInterest(userId: string, caseId: string, actor?: CaseActor) {
         const org = await this.resolveOrgProfile(userId);
 

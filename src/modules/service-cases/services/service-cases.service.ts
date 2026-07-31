@@ -87,8 +87,6 @@ export class ServiceCasesService {
         await this.serviceCasesRepository.delete(id);
     }
 
-    // ---- Operator marketplace ---------------------------------------------
-
     findAvailable(userId: string) {
         return this.serviceCasesRepository.findAvailable(userId);
     }
