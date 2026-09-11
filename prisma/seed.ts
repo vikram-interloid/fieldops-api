@@ -1,5 +1,23 @@
 import 'dotenv/config';
 
+// Force DNS to resolve IPv4 only. The Neon host advertises both A and AAAA
+// records; on networks without working IPv6 egress, node/pg picks the IPv6
+// address and hangs (ETIMEDOUT) on the first query. Forcing family:4 avoids it.
+// Uses the mutable CJS `dns` module (the ESM namespace is read-only).
+import { createRequire } from 'node:module';
+const dns = createRequire(process.cwd() + '/')('node:dns');
+const origLookup = dns.lookup;
+dns.lookup = (hostname: string, options: unknown, callback?: unknown) => {
+    if (typeof options === 'function') {
+        callback = options;
+        options = {};
+    }
+    return origLookup.call(dns, hostname, { ...(options as object), family: 4 }, callback);
+};
+const origLookupP = dns.promises.lookup;
+dns.promises.lookup = (hostname: string, options: object = {}) =>
+    origLookupP.call(dns.promises, hostname, { ...options, family: 4 });
+
 import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
@@ -94,80 +112,152 @@ async function seedDomain(organizationId: string) {
     }
 
     // --- Customers + locations + delivery points -------------------------
-    const customerSeed = [
+    type LocationSeed = {
+        name: string; address: string; city: string; points: string[];
+        postalCode?: string; state?: string; lat?: number; lng?: number;
+    };
+    type CustomerSeed = {
+        name: string; contactName: string; email: string; phone: string;
+        industry: string; contractType: string; status: string; city: string;
+        locations: LocationSeed[];
+    };
+
+    const customerSeed: CustomerSeed[] = [
         {
             name: 'Pepsi', contactName: 'Anita Desai', email: 'anita@pepsi.com', phone: '+91 98111 20001',
             industry: 'Food & Beverage', contractType: 'Enterprise', status: 'Active', city: 'Mumbai',
             locations: [
-                { name: 'Andheri Bottling Plant', address: '12 MIDC Industrial Area', city: 'Mumbai', points: ['Loading Dock A', 'Cold Storage', 'Rooftop Plant Room'] },
-                { name: 'Pune Warehouse', address: '88 Hinjewadi Phase 2', city: 'Pune', points: ['Bay 1', 'Bay 2'] },
+                { name: 'Andheri Bottling Plant', address: '12 MIDC Industrial Area', city: 'Mumbai', postalCode: '400093', state: 'Maharashtra', lat: 19.1197, lng: 72.8697, points: ['Loading Dock A', 'Cold Storage', 'Rooftop Plant Room'] },
+                { name: 'Pune Warehouse', address: '88 Hinjewadi Phase 2', city: 'Pune', postalCode: '411057', state: 'Maharashtra', lat: 18.5913, lng: 73.7389, points: ['Bay 1', 'Bay 2'] },
             ],
         },
         {
             name: 'Nestle', contactName: 'Rohan Mehta', email: 'rohan@nestle.com', phone: '+91 98111 20002',
             industry: 'Food & Beverage', contractType: 'Premium', status: 'Active', city: 'Gurgaon',
             locations: [
-                { name: 'Gurgaon Distribution Center', address: '45 Udyog Vihar', city: 'Gurgaon', points: ['Warehouse 3', 'Chiller Unit'] },
+                { name: 'Gurgaon Distribution Center', address: '45 Udyog Vihar', city: 'Gurgaon', postalCode: '122016', state: 'Haryana', lat: 28.5021, lng: 77.0854, points: ['Warehouse 3', 'Chiller Unit'] },
             ],
         },
         {
             name: 'Coca-Cola', contactName: 'Priya Nair', email: 'priya@coca-cola.com', phone: '+91 98111 20003',
             industry: 'Food & Beverage', contractType: 'Enterprise', status: 'Active', city: 'Bengaluru',
             locations: [
-                { name: 'Whitefield Bottling Line', address: '21 ITPL Main Road', city: 'Bengaluru', points: ['Bottling Line 2', 'Compressor Room'] },
+                { name: 'Whitefield Bottling Line', address: '21 ITPL Main Road', city: 'Bengaluru', postalCode: '560066', state: 'Karnataka', lat: 12.9856, lng: 77.7269, points: ['Bottling Line 2', 'Compressor Room'] },
             ],
         },
         {
             name: 'Infosys', contactName: 'Karthik Rao', email: 'karthik@infosys.com', phone: '+91 98111 20004',
             industry: 'Technology', contractType: 'Premium', status: 'Active', city: 'Pune',
             locations: [
-                { name: 'Pune Office Campus', address: '7 Magarpatta City', city: 'Pune', points: ['Office Block B', 'Server Room'] },
+                { name: 'Pune Office Campus', address: '7 Magarpatta City', city: 'Pune', postalCode: '411028', state: 'Maharashtra', lat: 18.5158, lng: 73.9280, points: ['Office Block B', 'Server Room'] },
             ],
         },
         {
             name: 'Amazon', contactName: 'Sneha Iyer', email: 'sneha@amazon.com', phone: '+91 98111 20005',
             industry: 'Logistics', contractType: 'Enterprise', status: 'Active', city: 'Hyderabad',
             locations: [
-                { name: 'Fulfillment Center HYD-1', address: '3 Outer Ring Road', city: 'Hyderabad', points: ['Inbound Dock', 'Pump House'] },
+                { name: 'Fulfillment Center HYD-1', address: '3 Outer Ring Road', city: 'Hyderabad', postalCode: '500019', state: 'Telangana', lat: 17.4468, lng: 78.3512, points: ['Inbound Dock', 'Pump House'] },
             ],
         },
         {
             name: 'Toyota', contactName: 'Sameer Patel', email: 'sameer@toyota.com', phone: '+91 98111 20006',
             industry: 'Manufacturing', contractType: 'Standard', status: 'Active', city: 'Chennai',
             locations: [
-                { name: 'Chennai Assembly Plant', address: '9 Oragadam SIPCOT', city: 'Chennai', points: ['Paint Shop', 'Weld Line', 'Canteen HVAC'] },
+                { name: 'Chennai Assembly Plant', address: '9 Oragadam SIPCOT', city: 'Chennai', postalCode: '602105', state: 'Tamil Nadu', lat: 12.8081, lng: 79.9498, points: ['Paint Shop', 'Weld Line', 'Canteen HVAC'] },
             ],
         },
         {
             name: 'IKEA', contactName: 'Pooja Reddy', email: 'pooja@ikea.com', phone: '+91 98111 20007',
             industry: 'Retail', contractType: 'Standard', status: 'Active', city: 'Mumbai',
             locations: [
-                { name: 'Navi Mumbai Store', address: '4 Turbhe MIDC', city: 'Navi Mumbai', points: ['Food Court', 'Cold Room', 'Rooftop AHU'] },
+                { name: 'Navi Mumbai Store', address: '4 Turbhe MIDC', city: 'Navi Mumbai', postalCode: '400705', state: 'Maharashtra', lat: 19.0728, lng: 73.0170, points: ['Food Court', 'Cold Room', 'Rooftop AHU'] },
             ],
         },
         {
             name: 'Bosch', contactName: 'Arjun Pillai', email: 'arjun@bosch.com', phone: '+91 98111 20008',
             industry: 'Technology', contractType: 'Premium', status: 'Active', city: 'Bengaluru',
             locations: [
-                { name: 'Adugodi R&D Campus', address: '18 Hosur Road', city: 'Bengaluru', points: ['Lab Chiller Room', 'Data Center'] },
+                { name: 'Adugodi R&D Campus', address: '18 Hosur Road', city: 'Bengaluru', postalCode: '560030', state: 'Karnataka', lat: 12.9384, lng: 77.6084, points: ['Lab Chiller Room', 'Data Center'] },
             ],
         },
         {
             name: 'Starbucks', contactName: 'Meera Krishnan', email: 'meera@starbucks.com', phone: '+91 98111 20009',
             industry: 'Food & Beverage', contractType: 'Premium', status: 'Active', city: 'Bengaluru',
             locations: [
-                { name: 'Koramangala Roastery', address: '80 Feet Road', city: 'Bengaluru', points: ['Brew Bar', 'Cold Storage'] },
-                { name: 'Indiranagar Cafe', address: '100 Feet Road', city: 'Bengaluru', points: ['Espresso Station'] },
+                { name: 'Koramangala Roastery', address: '80 Feet Road', city: 'Bengaluru', postalCode: '560034', state: 'Karnataka', lat: 12.9352, lng: 77.6245, points: ['Brew Bar', 'Cold Storage'] },
+                { name: 'Indiranagar Cafe', address: '100 Feet Road', city: 'Bengaluru', postalCode: '560038', state: 'Karnataka', lat: 12.9784, lng: 77.6408, points: ['Espresso Station'] },
             ],
         },
         {
             name: 'Reliance Retail', contactName: 'Vikas Kulkarni', email: 'vikas@relianceretail.com', phone: '+91 98111 20010',
             industry: 'Retail', contractType: 'Enterprise', status: 'Active', city: 'Ahmedabad',
             locations: [
-                { name: 'Ahmedabad Hypermart', address: '55 SG Highway', city: 'Ahmedabad', points: ['Frozen Aisle', 'Dairy Chiller', 'Backroom AHU'] },
+                { name: 'Ahmedabad Hypermart', address: '55 SG Highway', city: 'Ahmedabad', postalCode: '380015', state: 'Gujarat', lat: 23.0225, lng: 72.5714, points: ['Frozen Aisle', 'Dairy Chiller', 'Backroom AHU'] },
             ],
         },
     ];
+
+    // Extra customers — broaden industry / contract-type / status coverage so
+    // dashboard filters have something to bite on.
+    customerSeed.push(
+        {
+            name: 'Marriott Hotels', contactName: 'Ananya Bose', email: 'ananya@marriott.com', phone: '+91 98111 20011',
+            industry: 'Hospitality', contractType: 'Enterprise', status: 'Active', city: 'Delhi',
+            locations: [
+                { name: 'Aerocity Marriott', address: '2 Asset Area 4', city: 'Delhi', postalCode: '110037', state: 'Delhi', lat: 28.5535, lng: 77.1210, points: ['Kitchen Cold Room', 'Laundry Plant', 'Lobby AHU'] },
+                { name: 'Whitefield Courtyard', address: '30 ITPL Road', city: 'Bengaluru', postalCode: '560066', state: 'Karnataka', lat: 12.9698, lng: 77.7500, points: ['Banquet AHU', 'Kitchen Chiller'] },
+            ],
+        },
+        {
+            name: 'Apollo Hospitals', contactName: 'Dr. Rekha Suresh', email: 'rekha@apollo.com', phone: '+91 98111 20012',
+            industry: 'Healthcare', contractType: 'Enterprise', status: 'Active', city: 'Chennai',
+            locations: [
+                { name: 'Greams Road Hospital', address: '21 Greams Lane', city: 'Chennai', postalCode: '600006', state: 'Tamil Nadu', lat: 13.0604, lng: 80.2496, points: ['OT Complex AHU', 'Blood Bank Freezer', 'Pharmacy Cold Room'] },
+            ],
+        },
+        {
+            name: 'DMart', contactName: 'Nilesh Shah', email: 'nilesh@dmart.com', phone: '+91 98111 20013',
+            industry: 'Retail', contractType: 'Standard', status: 'Active', city: 'Thane',
+            locations: [
+                { name: 'Thane Superstore', address: '14 Ghodbunder Road', city: 'Thane', postalCode: '400607', state: 'Maharashtra', lat: 19.2183, lng: 72.9781, points: ['Frozen Section', 'Dairy Wall', 'Backroom Chiller'] },
+            ],
+        },
+        {
+            name: 'Zomato Kitchens', contactName: 'Farhan Qureshi', email: 'farhan@zomato.com', phone: '+91 98111 20014',
+            industry: 'Food & Beverage', contractType: 'Standard', status: 'Active', city: 'Gurgaon',
+            locations: [
+                { name: 'Sector 44 Cloud Kitchen', address: '9 Sector 44', city: 'Gurgaon', postalCode: '122003', state: 'Haryana', lat: 28.4506, lng: 77.0817, points: ['Prep Line Chiller', 'Walk-in Freezer'] },
+            ],
+        },
+        {
+            name: 'Tata Motors', contactName: 'Girish Deshmukh', email: 'girish@tatamotors.com', phone: '+91 98111 20015',
+            industry: 'Manufacturing', contractType: 'Enterprise', status: 'Active', city: 'Pune',
+            locations: [
+                { name: 'Pimpri Plant', address: '1 Telco Road', city: 'Pune', postalCode: '411018', state: 'Maharashtra', lat: 18.6298, lng: 73.7997, points: ['Press Shop', 'Paint Booth 2', 'Compressor House'] },
+            ],
+        },
+        {
+            name: 'HDFC Bank', contactName: 'Shruti Kapoor', email: 'shruti@hdfcbank.com', phone: '+91 98111 20016',
+            industry: 'Financial Services', contractType: 'Premium', status: 'Active', city: 'Mumbai',
+            locations: [
+                { name: 'BKC Data Center', address: '5 Bandra Kurla Complex', city: 'Mumbai', postalCode: '400051', state: 'Maharashtra', lat: 19.0662, lng: 72.8691, points: ['DC Hall 1', 'UPS Room', 'Precision AC Bank'] },
+            ],
+        },
+        {
+            name: 'Decathlon', contactName: 'Manav Sethi', email: 'manav@decathlon.com', phone: '+91 98111 20017',
+            industry: 'Retail', contractType: 'Standard', status: 'Inactive', city: 'Hyderabad',
+            locations: [
+                { name: 'Kukatpally Store', address: '77 JNTU Road', city: 'Hyderabad', postalCode: '500072', state: 'Telangana', lat: 17.4948, lng: 78.3996, points: ['Store Floor AHU'] },
+            ],
+        },
+        {
+            name: 'Britannia', contactName: 'Lakshmi Narayan', email: 'lakshmi@britannia.com', phone: '+91 98111 20018',
+            industry: 'Food & Beverage', contractType: 'Premium', status: 'Active', city: 'Kolkata',
+            locations: [
+                { name: 'Taratala Biscuit Plant', address: '15 Taratala Road', city: 'Kolkata', postalCode: '700088', state: 'West Bengal', lat: 22.5116, lng: 88.3040, points: ['Oven Line 1', 'Ingredient Cold Store', 'Utility Block'] },
+            ],
+        },
+    );
 
     const customerByName = new Map<string, string>();
     // location name -> id, delivery point name -> id (names are unique enough in this seed)
@@ -190,6 +280,11 @@ async function seedDomain(organizationId: string) {
                     name: loc.name,
                     address: loc.address,
                     city: loc.city,
+                    state: loc.state ?? null,
+                    postalCode: loc.postalCode ?? null,
+                    country: 'India',
+                    lat: loc.lat ?? null,
+                    lng: loc.lng ?? null,
                 },
             });
             locationByName.set(location.name, location.id);
@@ -212,6 +307,14 @@ async function seedDomain(organizationId: string) {
         { name: 'Vikram Singh', role: 'Refrigeration Technician', status: 'Available', activeJobs: 1, rating: 4.7, skills: ['Refrigeration', 'HVAC'], email: 'vikram@acmefield.com', phone: '+91 90000 10005', region: 'South Zone', department: 'Refrigeration' },
         { name: 'Priya Menon', role: 'Coffee Equipment Specialist', status: 'On Job', activeJobs: 2, rating: 4.9, skills: ['Coffee', 'Vending'], email: 'priya@acmefield.com', phone: '+91 90000 10006', region: 'South Zone', department: 'Appliances' },
         { name: 'Rahul Verma', role: 'Field Technician', status: 'Available', activeJobs: 0, rating: 4.3, skills: ['Mechanical', 'Electrical'], email: 'rahulv@acmefield.com', phone: '+91 90000 10007', region: 'West Zone', department: 'Mechanical' },
+        { name: 'Deepak Chauhan', role: 'Senior Refrigeration Technician', status: 'On Job', activeJobs: 2, rating: 4.9, skills: ['Refrigeration', 'Cold Chain', 'Diagnostics'], email: 'deepak@acmefield.com', phone: '+91 90000 10008', region: 'North Zone', department: 'Refrigeration', employeeId: 'EMP-1008', hireDate: '2019-04-15' },
+        { name: 'Ananya Roy', role: 'HVAC Engineer', status: 'Available', activeJobs: 1, rating: 4.6, skills: ['HVAC', 'Controls', 'BMS'], email: 'ananya@acmefield.com', phone: '+91 90000 10009', region: 'East Zone', department: 'HVAC', employeeId: 'EMP-1009', hireDate: '2021-07-01' },
+        { name: 'Faizal Khan', role: 'Electrical Technician', status: 'On Job', activeJobs: 3, rating: 4.1, skills: ['Electrical', 'UPS', 'Switchgear'], email: 'faizal@acmefield.com', phone: '+91 90000 10010', region: 'West Zone', department: 'Electrical', employeeId: 'EMP-1010', hireDate: '2022-02-10' },
+        { name: 'Kavya Reddy', role: 'Controls Specialist', status: 'Available', activeJobs: 0, rating: 4.7, skills: ['BMS', 'Controls', 'Diagnostics'], email: 'kavya@acmefield.com', phone: '+91 90000 10011', region: 'South Zone', department: 'Controls', employeeId: 'EMP-1011', hireDate: '2020-11-23' },
+        { name: 'Manoj Tiwari', role: 'Field Technician', status: 'On Leave', activeJobs: 0, rating: 3.9, skills: ['Mechanical', 'Plumbing'], email: 'manoj@acmefield.com', phone: '+91 90000 10012', region: 'North Zone', department: 'Mechanical', employeeId: 'EMP-1012', hireDate: '2023-01-09' },
+        { name: 'Sanjana Iyer', role: 'Junior HVAC Technician', status: 'Available', activeJobs: 1, rating: 4.0, skills: ['HVAC'], email: 'sanjana@acmefield.com', phone: '+91 90000 10013', region: 'South Zone', department: 'HVAC', employeeId: 'EMP-1013', hireDate: '2024-06-03' },
+        { name: 'Harpreet Sandhu', role: 'Pump & Utility Technician', status: 'On Job', activeJobs: 2, rating: 4.5, skills: ['Pumps', 'Mechanical', 'Plumbing'], email: 'harpreet@acmefield.com', phone: '+91 90000 10014', region: 'North Zone', department: 'Mechanical', employeeId: 'EMP-1014', hireDate: '2018-09-17' },
+        { name: 'Elena Fernandes', role: 'Data Center Cooling Specialist', status: 'Available', activeJobs: 1, rating: 4.8, skills: ['HVAC', 'Precision Cooling', 'Controls'], email: 'elena@acmefield.com', phone: '+91 90000 10015', region: 'West Zone', department: 'HVAC', employeeId: 'EMP-1015', hireDate: '2020-03-30' },
     ];
     const technicianByName = new Map<string, string>();
     for (const t of technicianSeed) {
@@ -231,6 +334,18 @@ async function seedDomain(organizationId: string) {
         { name: 'Condenser Fan Blade 18"', sku: 'HVAC-FAN18', category: 'HVAC', location: 'Warehouse B', quantity: 22, reorderLevel: 8, unitPrice: 41, supplier: 'CoolParts' },
         { name: 'Thermostat Digital', sku: 'ELC-THERM', category: 'Electrical', location: 'Van 2', quantity: 5, reorderLevel: 12, unitPrice: 28, supplier: 'ElectroSupply' },
         { name: 'Water Filter Cartridge', sku: 'FLT-WTR', category: 'Filters', location: 'Central Store', quantity: 90, reorderLevel: 25, unitPrice: 15, supplier: 'FilterCo' },
+        { name: 'Expansion Valve TXV 3T', sku: 'REF-TXV3', category: 'Refrigerant', location: 'Warehouse A', quantity: 18, reorderLevel: 10, unitPrice: 62, supplier: 'CoolParts' },
+        { name: 'R-134A Refrigerant', sku: 'REF-134A', category: 'Refrigerant', location: 'Warehouse B', quantity: 12, reorderLevel: 15, unitPrice: 88, supplier: 'CoolParts' },
+        { name: 'Belt Drive V-Type A42', sku: 'MEC-BELT42', category: 'Mechanical', location: 'Van 1', quantity: 34, reorderLevel: 10, unitPrice: 12, supplier: 'FlowTech' },
+        { name: 'Mechanical Seal 25mm', sku: 'PMP-SEAL25', category: 'Pumps', location: 'Central Store', quantity: 6, reorderLevel: 12, unitPrice: 55, supplier: 'FlowTech' },
+        { name: 'Pressure Switch HP/LP', sku: 'CTL-PSW', category: 'Controls', location: 'Warehouse A', quantity: 27, reorderLevel: 10, unitPrice: 31, supplier: 'ElectroSupply' },
+        { name: 'BMS Temperature Sensor', sku: 'CTL-TEMP', category: 'Controls', location: 'Warehouse B', quantity: 48, reorderLevel: 20, unitPrice: 24, supplier: 'SenseTech' },
+        { name: 'UPS Battery 12V 100Ah', sku: 'ELC-BAT100', category: 'Electrical', location: 'Central Store', quantity: 9, reorderLevel: 6, unitPrice: 210, supplier: 'PowerCell' },
+        { name: 'Precision AC Humidifier Canister', sku: 'HVAC-HUM', category: 'HVAC', location: 'Warehouse A', quantity: 4, reorderLevel: 8, unitPrice: 175, supplier: 'CoolParts' },
+        { name: 'Defrost Heater Element 1.2kW', sku: 'REF-DEFH', category: 'Refrigeration', location: 'Van 2', quantity: 16, reorderLevel: 8, unitPrice: 47, supplier: 'CoolParts' },
+        { name: 'Espresso Steam Wand Valve', sku: 'COF-STMV', category: 'Coffee Parts', location: 'Warehouse A', quantity: 21, reorderLevel: 10, unitPrice: 39, supplier: 'BrewParts' },
+        { name: 'Vending Bill Validator', sku: 'VND-BILL', category: 'Vending Parts', location: 'Warehouse B', quantity: 3, reorderLevel: 5, unitPrice: 168, supplier: 'VendSupply' },
+        { name: 'Copper Pipe 3/8" (per m)', sku: 'MEC-CU38', category: 'Mechanical', location: 'Central Store', quantity: 200, reorderLevel: 50, unitPrice: 6.5, supplier: 'MetalWorks' },
     ];
     for (const p of partSeed) {
         await prisma.part.create({ data: { ...p, organizationId } });
@@ -249,6 +364,21 @@ async function seedDomain(organizationId: string) {
         { name: 'Starbucks Cold Brew Chiller', serial: 'SN-90055', customer: 'Starbucks', health: 40, warranty: 'Expiring Soon', status: 'Maintenance', category: 'Refrigeration', manufacturer: 'Blue Star', model: 'CB-120', location: 'Koramangala Roastery', locationName: 'Koramangala Roastery', pointName: 'Cold Storage', purchaseDate: '2021-11-20', lastServiceDate: '2026-03-30', nextServiceDate: '2026-06-30' },
         { name: 'Reliance Frozen Aisle Rack', serial: 'SN-90066', customer: 'Reliance Retail', health: 66, warranty: 'Active', status: 'Operational', category: 'Refrigeration', manufacturer: 'Voltas', model: 'FR-800', location: 'Ahmedabad Hypermart', locationName: 'Ahmedabad Hypermart', pointName: 'Frozen Aisle', purchaseDate: '2022-09-09', lastServiceDate: '2026-04-18', nextServiceDate: '2026-07-18' },
         { name: 'Reliance Dairy Chiller', serial: 'SN-90077', customer: 'Reliance Retail', health: 83, warranty: 'Active', status: 'Operational', category: 'Refrigeration', manufacturer: 'Blue Star', model: 'DC-400', location: 'Ahmedabad Hypermart', locationName: 'Ahmedabad Hypermart', pointName: 'Dairy Chiller', purchaseDate: '2023-03-03', lastServiceDate: '2026-05-25', nextServiceDate: '2026-08-25' },
+        { name: 'Marriott Kitchen Cold Room', serial: 'SN-91011', customer: 'Marriott Hotels', health: 71, warranty: 'Active', status: 'Operational', category: 'Refrigeration', manufacturer: 'Blue Star', model: 'KC-300', location: 'Aerocity Marriott', locationName: 'Aerocity Marriott', pointName: 'Kitchen Cold Room', purchaseDate: '2022-12-01', lastServiceDate: '2026-05-15', nextServiceDate: '2026-08-15' },
+        { name: 'Marriott Lobby AHU', serial: 'SN-91012', customer: 'Marriott Hotels', health: 58, warranty: 'Expiring Soon', status: 'Maintenance', category: 'HVAC', manufacturer: 'Voltas', model: 'AHU-900', location: 'Aerocity Marriott', locationName: 'Aerocity Marriott', pointName: 'Lobby AHU', purchaseDate: '2021-08-19', lastServiceDate: '2026-04-05', nextServiceDate: '2026-07-05' },
+        { name: 'Courtyard Banquet AHU', serial: 'SN-91013', customer: 'Marriott Hotels', health: 86, warranty: 'Active', status: 'Operational', category: 'HVAC', manufacturer: 'Daikin', model: 'AHU-550', location: 'Whitefield Courtyard', locationName: 'Whitefield Courtyard', pointName: 'Banquet AHU', purchaseDate: '2023-10-12', lastServiceDate: '2026-06-02', nextServiceDate: '2026-09-02' },
+        { name: 'Apollo OT Complex AHU', serial: 'SN-91021', customer: 'Apollo Hospitals', health: 94, warranty: 'Active', status: 'Operational', category: 'HVAC', manufacturer: 'Carrier', model: 'OT-HEPA-4', location: 'Greams Road Hospital', locationName: 'Greams Road Hospital', pointName: 'OT Complex AHU', purchaseDate: '2024-02-20', lastServiceDate: '2026-06-10', nextServiceDate: '2026-09-10' },
+        { name: 'Apollo Blood Bank Freezer', serial: 'SN-91022', customer: 'Apollo Hospitals', health: 47, warranty: 'Active', status: 'Maintenance', category: 'Refrigeration', manufacturer: 'Blue Star', model: 'BB-80', location: 'Greams Road Hospital', locationName: 'Greams Road Hospital', pointName: 'Blood Bank Freezer', purchaseDate: '2021-05-14', lastServiceDate: '2026-03-28', nextServiceDate: '2026-06-28' },
+        { name: 'DMart Frozen Section Rack', serial: 'SN-91031', customer: 'DMart', health: 62, warranty: 'Expired', status: 'Operational', category: 'Refrigeration', manufacturer: 'Voltas', model: 'FR-600', location: 'Thane Superstore', locationName: 'Thane Superstore', pointName: 'Frozen Section', purchaseDate: '2019-07-07', lastServiceDate: '2026-04-22', nextServiceDate: '2026-07-22' },
+        { name: 'DMart Dairy Wall', serial: 'SN-91032', customer: 'DMart', health: 79, warranty: 'Active', status: 'Operational', category: 'Refrigeration', manufacturer: 'Blue Star', model: 'DW-250', location: 'Thane Superstore', locationName: 'Thane Superstore', pointName: 'Dairy Wall', purchaseDate: '2023-01-30', lastServiceDate: '2026-05-18', nextServiceDate: '2026-08-18' },
+        { name: 'Zomato Walk-in Freezer', serial: 'SN-91041', customer: 'Zomato Kitchens', health: 35, warranty: 'Expiring Soon', status: 'Out of Service', category: 'Refrigeration', manufacturer: 'Blue Star', model: 'WF-150', location: 'Sector 44 Cloud Kitchen', locationName: 'Sector 44 Cloud Kitchen', pointName: 'Walk-in Freezer', purchaseDate: '2021-09-25', lastServiceDate: '2026-02-14', nextServiceDate: '2026-05-14' },
+        { name: 'Tata Compressor House Unit', serial: 'SN-91051', customer: 'Tata Motors', health: 68, warranty: 'Active', status: 'Operational', category: 'Compressor', manufacturer: 'Atlas Copco', model: 'GA-55', location: 'Pimpri Plant', locationName: 'Pimpri Plant', pointName: 'Compressor House', purchaseDate: '2020-06-11', lastServiceDate: '2026-04-30', nextServiceDate: '2026-07-30' },
+        { name: 'Tata Paint Booth 2 AC', serial: 'SN-91052', customer: 'Tata Motors', health: 90, warranty: 'Active', status: 'Operational', category: 'HVAC', manufacturer: 'Voltas', model: 'PB-750', location: 'Pimpri Plant', locationName: 'Pimpri Plant', pointName: 'Paint Booth 2', purchaseDate: '2023-11-08', lastServiceDate: '2026-06-05', nextServiceDate: '2026-09-05' },
+        { name: 'HDFC Precision AC Bank', serial: 'SN-91061', customer: 'HDFC Bank', health: 88, warranty: 'Active', status: 'Operational', category: 'HVAC', manufacturer: 'Carrier', model: 'PAC-40', location: 'BKC Data Center', locationName: 'BKC Data Center', pointName: 'Precision AC Bank', purchaseDate: '2024-04-02', lastServiceDate: '2026-06-20', nextServiceDate: '2026-09-20' },
+        { name: 'HDFC UPS Room Cooling', serial: 'SN-91062', customer: 'HDFC Bank', health: 52, warranty: 'Expiring Soon', status: 'Maintenance', category: 'HVAC', manufacturer: 'Daikin', model: 'UPS-C20', location: 'BKC Data Center', locationName: 'BKC Data Center', pointName: 'UPS Room', purchaseDate: '2021-01-18', lastServiceDate: '2026-03-12', nextServiceDate: '2026-06-12' },
+        { name: 'Britannia Oven Line 1 Exhaust', serial: 'SN-91071', customer: 'Britannia', health: 74, warranty: 'Active', status: 'Operational', category: 'HVAC', manufacturer: 'Voltas', model: 'EX-400', location: 'Taratala Biscuit Plant', locationName: 'Taratala Biscuit Plant', pointName: 'Oven Line 1', purchaseDate: '2022-07-21', lastServiceDate: '2026-05-08', nextServiceDate: '2026-08-08' },
+        { name: 'Britannia Ingredient Cold Store', serial: 'SN-91072', customer: 'Britannia', health: 43, warranty: 'Expired', status: 'Maintenance', category: 'Refrigeration', manufacturer: 'Blue Star', model: 'ICS-500', location: 'Taratala Biscuit Plant', locationName: 'Taratala Biscuit Plant', pointName: 'Ingredient Cold Store', purchaseDate: '2018-11-02', lastServiceDate: '2026-03-19', nextServiceDate: '2026-06-19' },
+        { name: 'Decathlon Store Floor AHU', serial: 'SN-91081', customer: 'Decathlon', health: 81, warranty: 'Active', status: 'Operational', category: 'HVAC', manufacturer: 'Daikin', model: 'AHU-320', location: 'Kukatpally Store', locationName: 'Kukatpally Store', pointName: 'Store Floor AHU', purchaseDate: '2023-06-15', lastServiceDate: '2026-05-30', nextServiceDate: '2026-08-30' },
     ];
     const assetByName = new Map<string, string>();
     for (const a of assetSeed) {
@@ -278,18 +408,83 @@ async function seedDomain(organizationId: string) {
         { customer: 'Starbucks', technician: 'Vikram Singh', asset: 'Starbucks Cold Brew Chiller', priority: 'Critical', status: 'Overdue', serviceType: 'Emergency', location: 'Koramangala Roastery', due: '2026-06-28', accepted: true, description: 'Cold brew chiller compressor failure', lat: 66, lng: 55 },
         { customer: 'Reliance Retail', technician: 'Amit Joshi', asset: 'Reliance Frozen Aisle Rack', priority: 'High', status: 'Open', serviceType: 'Repair', location: 'Ahmedabad Hypermart', due: '2026-07-04', accepted: false, description: 'Frozen aisle rack defrost fault', lat: 28, lng: 48 },
         { customer: 'Reliance Retail', technician: 'Rahul Verma', asset: 'Reliance Dairy Chiller', priority: 'Medium', status: 'Completed', serviceType: 'Maintenance', location: 'Ahmedabad Hypermart', due: '2026-06-22', accepted: true, description: 'Dairy chiller quarterly service', lat: 30, lng: 50 },
+        { customer: 'Marriott Hotels', technician: 'Deepak Chauhan', asset: 'Marriott Kitchen Cold Room', priority: 'High', status: 'In Progress', serviceType: 'Repair', location: 'Aerocity Marriott', due: '2026-08-06', accepted: true, description: 'Kitchen cold room door seal failure', lat: 45, lng: 38 },
+        { customer: 'Marriott Hotels', technician: 'Faizal Khan', asset: 'Marriott Lobby AHU', priority: 'Medium', status: 'Open', serviceType: 'Maintenance', location: 'Aerocity Marriott', due: '2026-08-12', accepted: false, description: 'Lobby AHU belt and filter change', lat: 46, lng: 39 },
+        { customer: 'Marriott Hotels', technician: 'Kavya Reddy', asset: 'Courtyard Banquet AHU', priority: 'Low', status: 'Scheduled', serviceType: 'Inspection', location: 'Whitefield Courtyard', due: '2026-08-20', accepted: true, description: 'Banquet AHU controls calibration', lat: 62, lng: 50 },
+        { customer: 'Apollo Hospitals', technician: 'Sanjana Iyer', asset: 'Apollo OT Complex AHU', priority: 'High', status: 'Scheduled', serviceType: 'Maintenance', location: 'Greams Road Hospital', due: '2026-08-09', accepted: true, description: 'OT complex HEPA filter integrity test', lat: 36, lng: 64 },
+        { customer: 'Apollo Hospitals', technician: 'Deepak Chauhan', asset: 'Apollo Blood Bank Freezer', priority: 'Critical', status: 'In Progress', serviceType: 'Emergency', location: 'Greams Road Hospital', due: '2026-08-04', accepted: true, description: 'Blood bank freezer temperature excursion alarm', lat: 37, lng: 65 },
+        { customer: 'DMart', technician: 'Vikram Singh', asset: 'DMart Frozen Section Rack', priority: 'Medium', status: 'Open', serviceType: 'Repair', location: 'Thane Superstore', due: '2026-08-11', accepted: false, description: 'Frozen section rack icing up on evaporator', lat: 44, lng: 41 },
+        { customer: 'DMart', technician: 'Harpreet Sandhu', asset: 'DMart Dairy Wall', priority: 'Low', status: 'Completed', serviceType: 'Inspection', location: 'Thane Superstore', due: '2026-07-25', accepted: true, description: 'Dairy wall temperature log verification', lat: 44, lng: 42 },
+        { customer: 'Zomato Kitchens', technician: 'Deepak Chauhan', asset: 'Zomato Walk-in Freezer', priority: 'Critical', status: 'Overdue', serviceType: 'Emergency', location: 'Sector 44 Cloud Kitchen', due: '2026-07-28', accepted: true, description: 'Walk-in freezer down — full stock at risk', lat: 31, lng: 36 },
+        { customer: 'Tata Motors', technician: 'Amit Joshi', asset: 'Tata Compressor House Unit', priority: 'High', status: 'In Progress', serviceType: 'Repair', location: 'Pimpri Plant', due: '2026-08-07', accepted: true, description: 'Air compressor pressure drop across plant', lat: 41, lng: 44 },
+        { customer: 'Tata Motors', technician: 'Rahul Verma', asset: 'Tata Paint Booth 2 AC', priority: 'Medium', status: 'Scheduled', serviceType: 'Maintenance', location: 'Pimpri Plant', due: '2026-08-18', accepted: true, description: 'Paint booth 2 AC quarterly service', lat: 41, lng: 45 },
+        { customer: 'HDFC Bank', technician: 'Elena Fernandes', asset: 'HDFC Precision AC Bank', priority: 'High', status: 'Open', serviceType: 'Inspection', location: 'BKC Data Center', due: '2026-08-08', accepted: false, description: 'Precision AC bank redundancy check before audit', lat: 43, lng: 37 },
+        { customer: 'HDFC Bank', technician: 'Faizal Khan', asset: 'HDFC UPS Room Cooling', priority: 'Critical', status: 'In Progress', serviceType: 'Emergency', location: 'BKC Data Center', due: '2026-08-04', accepted: true, description: 'UPS room temperature above 30C — cooling degraded', lat: 43, lng: 38 },
+        { customer: 'Britannia', technician: 'Ananya Roy', asset: 'Britannia Oven Line 1 Exhaust', priority: 'Medium', status: 'Open', serviceType: 'Maintenance', location: 'Taratala Biscuit Plant', due: '2026-08-14', accepted: false, description: 'Oven line 1 exhaust fan vibration', lat: 55, lng: 25 },
+        { customer: 'Britannia', technician: 'Ananya Roy', asset: 'Britannia Ingredient Cold Store', priority: 'High', status: 'Overdue', serviceType: 'Repair', location: 'Taratala Biscuit Plant', due: '2026-07-30', accepted: true, description: 'Ingredient cold store not reaching setpoint', lat: 56, lng: 26 },
+        { customer: 'Decathlon', technician: 'Sanjana Iyer', asset: 'Decathlon Store Floor AHU', priority: 'Low', status: 'Cancelled', serviceType: 'Inspection', location: 'Kukatpally Store', due: '2026-07-20', accepted: false, description: 'Store floor AHU inspection — cancelled, store on hold', lat: 52, lng: 47 },
+        { customer: 'Starbucks', technician: 'Priya Menon', asset: 'La Marzocco Espresso Machine', priority: 'Low', status: 'Completed', serviceType: 'Inspection', location: 'Indiranagar Cafe', due: '2026-07-15', accepted: true, description: 'Espresso station water filter check', lat: 65, lng: 53 },
+        { customer: 'Infosys', technician: 'Kavya Reddy', asset: 'Bosch Lab Chiller', priority: 'Medium', status: 'Scheduled', serviceType: 'Maintenance', location: 'Pune Office Campus', due: '2026-08-16', accepted: true, description: 'Server room precision cooling PM visit', lat: 39, lng: 43 },
     ];
+
+    // Fixed clock so seeded SLA timestamps stay deterministic across runs.
+    const NOW = new Date('2026-08-03T09:00:00.000Z');
+    const hoursAgo = (h: number) => new Date(NOW.getTime() - h * 3600_000);
+
+    const createdWorkOrders: { id: string; technician: string; status: string }[] = [];
     for (const w of workOrderSeed) {
-        const { customer, technician, asset, ...scalar } = w;
-        await prisma.workOrder.create({
+        const { customer, technician, asset, location, ...scalar } = w;
+        // Terminal / in-flight orders get realistic SLA stamps so response and
+        // resolution dashboards have something to compute against.
+        const responded = ['In Progress', 'Completed', 'Overdue'].includes(w.status);
+        const resolved = w.status === 'Completed';
+        const workOrder = await prisma.workOrder.create({
             data: {
                 ...scalar,
+                location,
                 organizationId,
                 customerId: customerByName.get(customer) ?? null,
                 technicianId: technicianByName.get(technician) ?? null,
                 assetId: assetByName.get(asset) ?? null,
+                locationId: locationByName.get(location) ?? null,
+                respondedAt: responded ? hoursAgo(30) : null,
+                resolvedAt: resolved ? hoursAgo(6) : null,
             },
         });
+        createdWorkOrders.push({ id: workOrder.id, technician, status: workOrder.status });
+    }
+
+    // --- Work order event history ----------------------------------------
+    for (const wo of createdWorkOrders) {
+        const events: {
+            type: string; fromValue?: string; toValue?: string; note?: string;
+            actorName: string; actorRole: string;
+        }[] = [
+            { type: 'created', toValue: 'Open', note: 'Work order raised from service case intake.', actorName: 'Dev Dispatcher', actorRole: 'Dispatcher' },
+            { type: 'assigned', toValue: wo.technician, note: `Assigned to ${wo.technician}.`, actorName: 'Dev Dispatcher', actorRole: 'Dispatcher' },
+        ];
+
+        if (['In Progress', 'Completed', 'Overdue'].includes(wo.status)) {
+            events.push({ type: 'accepted', fromValue: 'Open', toValue: 'In Progress', note: 'Technician accepted and travelling to site.', actorName: wo.technician, actorRole: 'Technician' });
+        }
+        if (wo.status === 'Completed') {
+            events.push(
+                { type: 'note', note: 'Work carried out, readings back within spec.', actorName: wo.technician, actorRole: 'Technician' },
+                { type: 'status_changed', fromValue: 'In Progress', toValue: 'Completed', note: 'Job closed and signed off by site contact.', actorName: wo.technician, actorRole: 'Technician' },
+            );
+        }
+        if (wo.status === 'Overdue') {
+            events.push({ type: 'status_changed', fromValue: 'In Progress', toValue: 'Overdue', note: 'Passed due date — parts awaited.', actorName: 'Maya Manager', actorRole: 'Manager' });
+        }
+        if (wo.status === 'Cancelled') {
+            events.push({ type: 'status_changed', fromValue: 'Open', toValue: 'Cancelled', note: 'Cancelled at customer request.', actorName: 'Maya Manager', actorRole: 'Manager' });
+        }
+
+        for (const e of events) {
+            await prisma.workOrderEvent.create({
+                data: { ...e, workOrderId: wo.id },
+            });
+        }
     }
 
     // --- Service cases ---------------------------------------------------
@@ -299,14 +494,75 @@ async function seedDomain(organizationId: string) {
         { customer: 'Starbucks', subject: 'Espresso machine leaking', description: 'Water pooling under the brew bar espresso machine.', serviceType: 'Repair', priority: 'Medium', location: 'Indiranagar Cafe', status: 'New' },
         { customer: 'Reliance Retail', subject: 'Dairy chiller warm', description: 'Dairy chiller running above safe temperature since morning.', serviceType: 'Emergency', priority: 'High', location: 'Ahmedabad Hypermart', status: 'New' },
         { customer: 'IKEA', subject: 'Food court AHU noise', description: 'Loud rattling from the rooftop AHU over the food court.', serviceType: 'Inspection', priority: 'Low', location: 'Navi Mumbai Store', status: 'New' },
+        { customer: 'Marriott Hotels', subject: 'Laundry plant steam leak', description: 'Steam escaping from the laundry plant header, room is fogging up.', serviceType: 'Emergency', priority: 'Critical', location: 'Aerocity Marriott', status: 'In Review', category: 'general' },
+        { customer: 'Apollo Hospitals', subject: 'Pharmacy cold room alarm', description: 'Pharmacy cold room repeatedly alarming overnight above 8C.', serviceType: 'Emergency', priority: 'Critical', location: 'Greams Road Hospital', status: 'Assigned', category: 'refrigeration' },
+        { customer: 'DMart', subject: 'Backroom chiller noisy', description: 'Backroom chiller making grinding noise since restock.', serviceType: 'Repair', priority: 'Medium', location: 'Thane Superstore', status: 'New', category: 'refrigeration' },
+        { customer: 'Zomato Kitchens', subject: 'Prep line chiller warm', description: 'Prep line chiller holding 12C, prep stock being moved out.', serviceType: 'Repair', priority: 'High', location: 'Sector 44 Cloud Kitchen', status: 'In Review', category: 'refrigeration' },
+        { customer: 'Tata Motors', subject: 'Press shop ventilation weak', description: 'Press shop extraction noticeably weaker on the east bay.', serviceType: 'Inspection', priority: 'Medium', location: 'Pimpri Plant', status: 'New', category: 'hvac' },
+        { customer: 'HDFC Bank', subject: 'DC Hall 1 hot aisle spike', description: 'Hot aisle temperature spiking during peak batch window.', serviceType: 'Emergency', priority: 'Critical', location: 'BKC Data Center', status: 'Assigned', category: 'hvac' },
+        { customer: 'Britannia', subject: 'Utility block panel tripping', description: 'Utility block distribution panel tripping twice a shift.', serviceType: 'Repair', priority: 'High', location: 'Taratala Biscuit Plant', status: 'In Review', category: 'electrical' },
+        { customer: 'Marriott Hotels', subject: 'Kitchen chiller service due', description: 'Banquet kitchen chiller past its scheduled service window.', serviceType: 'Maintenance', priority: 'Low', location: 'Whitefield Courtyard', status: 'Closed', category: 'refrigeration' },
     ];
     for (const sc of caseSeed) {
         const { customer, ...scalar } = sc;
-        await prisma.serviceCase.create({
+        const serviceCase = await prisma.serviceCase.create({
             data: {
                 ...scalar,
                 organizationId,
                 customerId: customerByName.get(customer) ?? null,
+                locationId: locationByName.get(sc.location) ?? null,
+            },
+        });
+
+        const caseEvents: {
+            type: string; fromValue?: string; toValue?: string; note?: string;
+            actorName: string; actorRole: string;
+        }[] = [
+            { type: 'created', toValue: 'New', note: `Case raised by ${customer}.`, actorName: 'Cara Customer', actorRole: 'Customer' },
+        ];
+        if (['In Review', 'Assigned', 'Closed'].includes(sc.status)) {
+            caseEvents.push({ type: 'status_changed', fromValue: 'New', toValue: 'In Review', note: 'Picked up by dispatch for triage.', actorName: 'Dev Dispatcher', actorRole: 'Dispatcher' });
+        }
+        if (['Assigned', 'Closed'].includes(sc.status)) {
+            caseEvents.push(
+                { type: 'operator_interest', toValue: 'CoolAir HVAC Services', note: 'Operator expressed interest in servicing this case.', actorName: 'Rahul Menon', actorRole: 'Operator' },
+                { type: 'operator_assigned', toValue: 'CoolAir HVAC Services', note: 'Case assigned to operator by platform dispatch.', actorName: 'Dev Dispatcher', actorRole: 'Dispatcher' },
+            );
+        }
+        if (sc.status === 'Closed') {
+            caseEvents.push({ type: 'status_changed', fromValue: 'Assigned', toValue: 'Closed', note: 'Work completed and case closed.', actorName: 'Maya Manager', actorRole: 'Manager' });
+        }
+
+        for (const e of caseEvents) {
+            await prisma.serviceCaseEvent.create({
+                data: { ...e, serviceCaseId: serviceCase.id },
+            });
+        }
+    }
+
+    // --- Technician event history ----------------------------------------
+    for (const t of technicianSeed) {
+        const technicianId = technicianByName.get(t.name);
+        if (!technicianId) continue;
+        await prisma.technicianEvent.create({
+            data: {
+                technicianId,
+                type: 'created',
+                toValue: t.name,
+                note: `Technician onboarded to ${t.department ?? 'Field Service'}.`,
+                actorName: 'Maya Manager',
+                actorRole: 'Manager',
+            },
+        });
+        await prisma.technicianEvent.create({
+            data: {
+                technicianId,
+                type: 'status_changed',
+                fromValue: 'Available',
+                toValue: t.status,
+                note: `Status set to ${t.status}.`,
+                actorName: 'Dev Dispatcher',
+                actorRole: 'Dispatcher',
             },
         });
     }
@@ -317,6 +573,16 @@ async function seedDomain(organizationId: string) {
         { title: 'New service case', message: 'Infosys reported a server room issue.', type: 'warning', read: false },
         { title: 'Job completed', message: 'Amazon pump inspection completed.', type: 'success', read: true },
         { title: 'Low stock alert', message: 'Scroll Compressor 5T is below reorder level.', type: 'info', read: false },
+        { title: 'Critical case raised', message: 'Apollo Hospitals reported a pharmacy cold room alarm.', type: 'danger', read: false },
+        { title: 'Freezer down', message: 'Zomato Kitchens walk-in freezer is out of service — stock at risk.', type: 'danger', read: false },
+        { title: 'SLA breach imminent', message: 'HDFC Bank UPS room emergency is approaching its resolution SLA.', type: 'warning', read: false },
+        { title: 'Technician on leave', message: 'Manoj Tiwari is on leave — 0 jobs reassigned.', type: 'info', read: true },
+        { title: 'Operator interest', message: 'CoolAir HVAC Services expressed interest in 2 open cases.', type: 'info', read: false },
+        { title: 'Stock replenished', message: 'Copper Pipe 3/8" restocked to 200 m at Central Store.', type: 'success', read: true },
+        { title: 'Work order cancelled', message: 'Decathlon Kukatpally inspection cancelled by customer.', type: 'warning', read: true },
+        { title: 'Asset health drop', message: 'Britannia Ingredient Cold Store health fell to 43%.', type: 'warning', read: false },
+        { title: 'Maintenance completed', message: 'DMart dairy wall temperature log verification closed.', type: 'success', read: true },
+        { title: 'New customer onboarded', message: 'Britannia added with 1 site and 3 delivery points.', type: 'success', read: true },
     ];
     for (const n of notificationSeed) {
         await prisma.notification.create({ data: { ...n, organizationId } });
@@ -414,6 +680,60 @@ async function seedDomain(organizationId: string) {
             areas: [
                 { category: 'refrigeration', region: 'South Zone', postalPrefix: '560' },
                 { category: 'hvac', region: 'South Zone', postalPrefix: '600' },
+            ],
+        },
+        {
+            name: 'MetroCool Facilities',
+            categories: ['hvac', 'general'],
+            status: 'Active',
+            contactName: 'Aditya Bansal',
+            email: 'ops@metrocool.example',
+            phone: '+91 90000 40006',
+            rating: 4.6,
+            region: 'North Zone',
+            areas: [
+                { category: 'hvac', region: 'North Zone', postalPrefix: '110' },
+                { category: 'general', region: 'North Zone', postalPrefix: '122' },
+            ],
+        },
+        {
+            name: 'EastCoast Service Group',
+            categories: ['refrigeration', 'electrical'],
+            status: 'Active',
+            contactName: 'Sourav Ghosh',
+            email: 'desk@eastcoast.example',
+            phone: '+91 90000 40007',
+            rating: 4.1,
+            region: 'East Zone',
+            areas: [
+                { category: 'refrigeration', region: 'East Zone', postalPrefix: '700' },
+                { category: 'electrical', region: 'East Zone', postalPrefix: '700' },
+            ],
+        },
+        {
+            name: 'PrecisionAir Data Centers',
+            categories: ['hvac'],
+            status: 'Active',
+            contactName: 'Ritu Malhotra',
+            email: 'ops@precisionair.example',
+            phone: '+91 90000 40008',
+            rating: 4.9,
+            region: 'West Zone',
+            areas: [
+                { category: 'hvac', region: 'West Zone', postalPrefix: '400' },
+            ],
+        },
+        {
+            name: 'SouthStar Maintenance',
+            categories: ['general', 'coffee'],
+            status: 'Inactive',
+            contactName: 'Bharath Kumar',
+            email: 'hello@southstar.example',
+            phone: '+91 90000 40009',
+            rating: 3.8,
+            region: 'South Zone',
+            areas: [
+                { category: 'general', region: 'South Zone', postalPrefix: '560' },
             ],
         },
     ];

@@ -18,6 +18,8 @@ import { SlaModule } from './modules/sla/sla.module';
 import { ServiceCaseModule } from './modules/service-cases/service-cases.module';
 import { NotificationModule } from './modules/notifications/notifications.module';
 import { EmailModule } from './core/email/email.module';
+// TODO: re-enable once S3_BUCKET is configured in .env
+// import { UploadModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
@@ -40,6 +42,7 @@ import { EmailModule } from './core/email/email.module';
     ServiceCaseModule,
     NotificationModule,
     EmailModule,
+    // UploadModule,
   ],
 })
 export class AppModule { }

@@ -8,6 +8,7 @@ const selectUser = {
     lastName: true,
     email: true,
     phone: true,
+    avatarUrl: true,
     isActive: true,
     createdAt: true,
 }

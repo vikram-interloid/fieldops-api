@@ -2,10 +2,10 @@ import {
     IsBoolean,
     IsEmail,
     IsIn,
-    IsInt,
     IsNumber,
     IsOptional,
     IsString,
+    IsUUID,
     MaxLength,
 } from 'class-validator';
 
@@ -36,15 +36,15 @@ export class UpdateWorkOrderDto {
     due?: string;
 
     @IsOptional()
-    @IsInt()
+    @IsUUID()
     customerId?: string;
 
     @IsOptional()
-    @IsInt()
+    @IsUUID()
     technicianId?: string;
 
     @IsOptional()
-    @IsInt()
+    @IsUUID()
     assetId?: string;
 
     @IsOptional()

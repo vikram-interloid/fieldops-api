@@ -23,6 +23,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1105.0",
     "@aws-sdk/client-ses": "^3.1085.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",
@@ -37,6 +38,7 @@
     "class-validator": "^0.15.1",
     "fs-extra": "^11.3.6",
     "handlebars": "^4.7.9",
+    "nodemailer": "^9.0.5",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.21.0",
@@ -55,6 +57,7 @@
     "@types/jest": "^30.0.0",
     "@types/ms": "^2.1.0",
     "@types/node": "^22.10.7",
+    "@types/nodemailer": "^8.0.1",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",
     "eslint": "^9.18.0",

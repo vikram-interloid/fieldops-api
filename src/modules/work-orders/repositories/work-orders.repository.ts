@@ -36,6 +36,23 @@ const selectWorkOrder = {
     technician: { select: { name: true } },
     asset: { select: { name: true } },
     workOrderNo: true,
+    // The site carries the real geocoded position. The work order's own
+    // lat/lng are display-only placeholders, so map clients should prefer
+    // `site.lat`/`site.lng` and fall back to the address for geocoding.
+    locationId: true,
+    site: {
+        select: {
+            id: true,
+            name: true,
+            address: true,
+            city: true,
+            state: true,
+            postalCode: true,
+            country: true,
+            lat: true,
+            lng: true,
+        },
+    },
 };
 
 @Injectable()

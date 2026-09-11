@@ -23,4 +23,17 @@ export class WorkOrderResponse {
     customer?: { name: string } | null;
     technician?: { name: string } | null;
     asset?: { name: string } | null;
+    locationId?: string | null;
+    /** Service site — the geocoded position map clients should plot. */
+    site?: {
+        id: string;
+        name: string;
+        address?: string | null;
+        city?: string | null;
+        state?: string | null;
+        postalCode?: string | null;
+        country?: string | null;
+        lat?: number | null;
+        lng?: number | null;
+    } | null;
 }

@@ -1,11 +1,11 @@
 import {
     IsEmail,
     IsIn,
-    IsInt,
     IsNotEmpty,
     IsNumber,
     IsOptional,
     IsString,
+    IsUUID,
     MaxLength,
 } from 'class-validator';
 
@@ -34,15 +34,15 @@ export class CreateWorkOrderDto {
     due: string;
 
     @IsOptional()
-    @IsInt()
+    @IsUUID()
     customerId?: string;
 
     @IsOptional()
-    @IsInt()
+    @IsUUID()
     technicianId?: string;
 
     @IsOptional()
-    @IsInt()
+    @IsUUID()
     assetId?: string;
 
     @IsOptional()

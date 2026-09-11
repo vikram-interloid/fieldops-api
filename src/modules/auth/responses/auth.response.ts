@@ -6,6 +6,7 @@ export class AuthResponse {
         firstName: string;
         lastName: string;
         email: string;
+        avatarUrl?: string | null;
         roles: string[];
         customerName?: string | null;
         technicianName?: string | null;

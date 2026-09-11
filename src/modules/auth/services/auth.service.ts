@@ -274,6 +274,7 @@ export class AuthService {
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,
+                avatarUrl: user.avatarUrl ?? null,
                 roles,
                 customerName: user.customer?.name ?? null,
                 technicianName: user.technician?.name ?? null,

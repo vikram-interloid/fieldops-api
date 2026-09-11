@@ -49,6 +49,7 @@ export class UsersService {
             lastName: user.lastName,
             email: user.email,
             phone: user.phone,
+            avatarUrl: user.avatarUrl,
             isActive: user.isActive,
         };
     }
@@ -64,6 +65,7 @@ export class UsersService {
             lastName: user.lastName,
             email: user.email,
             phone: user.phone,
+            avatarUrl: user.avatarUrl,
             isActive: user.isActive,
         }
     }
