@@ -19,12 +19,16 @@ import { TemplateService } from './services/template.services';
             useFactory: (
                 configService: ConfigService,
             ) => {
+                // Default is SMTP (used by /auth/send-otp). Set
+                // EMAIL_PROVIDER=ses to switch the whole mail stack to SES.
+                const name = (
+                    configService.get<string>('EMAIL_PROVIDER') ?? 'smtp'
+                ).toLowerCase();
+
                 const provider =
-                    configService.get<string>(
-                        'EMAIL_PROVIDER',
-                    ) === 'smtp'
-                        ? new SmtpProvider(configService)
-                        : new SesProvider(configService);
+                    name === 'ses'
+                        ? new SesProvider(configService)
+                        : new SmtpProvider(configService);
 
                 new Logger('EmailModule').log(
                     `Using ${provider.constructor.name}`,
