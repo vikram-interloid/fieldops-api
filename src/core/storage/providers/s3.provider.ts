@@ -22,10 +22,6 @@ export class S3Provider implements StorageProvider {
 
     private readonly region: string;
 
-    /**
-     * Optional CDN / custom-domain origin the objects are served from. When
-     * unset we fall back to the virtual-hosted-style S3 URL.
-     */
     private readonly publicBaseUrl?: string;
 
     constructor(private readonly configService: ConfigService) {
@@ -36,8 +32,6 @@ export class S3Provider implements StorageProvider {
             .get<string>('S3_PUBLIC_BASE_URL')
             ?.replace(/\/+$/, '');
 
-        // Static keys are only used when they are actually configured, so the
-        // same code runs under an IAM task role / instance profile in prod.
         const accessKeyId = this.configService.get<string>('AWS_ACCESS_KEY_ID');
         const secretAccessKey = this.configService.get<string>(
             'AWS_SECRET_ACCESS_KEY',
@@ -79,11 +73,6 @@ export class S3Provider implements StorageProvider {
         this.logger.log(`Deleted object ${key}`);
     }
 
-    /**
-     * `getOrThrow` only rejects `undefined`, so a present-but-blank key (a very
-     * easy .env mistake) would sail through and fail later as a confusing
-     * AWS error. Fail at boot instead.
-     */
     private requireConfig(key: string): string {
         const value = this.configService.get<string>(key)?.trim();
 

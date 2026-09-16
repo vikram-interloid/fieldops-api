@@ -2,21 +2,36 @@ import { json, urlencoded } from 'express';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Images arrive base64-encoded in a JSON body, which blows past Express's
-  // 100kb default. Kept a little above the 5MB decoded cap in
-  // upload.constants.ts so the API returns the friendly 413 rather than
-  // Express's raw "entity too large".
+  const config = new DocumentBuilder()
+    .setTitle('FieldOps API')
+    .setDescription('FieldOps API Documentation')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Enter your access token',
+      },
+      'access-token',
+    )
+    .build();
+
+  const documentFactory = () =>
+    SwaggerModule.createDocument(app, config);
+
+  SwaggerModule.setup('api/docs', app, documentFactory);
+
   const bodyLimit = process.env.BODY_LIMIT ?? '8mb';
+
   app.use(json({ limit: bodyLimit }));
   app.use(urlencoded({ extended: true, limit: bodyLimit }));
 
-  // CORS: reflect any origin by default (works with credentials, unlike a
-  // literal '*'). Set CORS_ORIGIN to a comma-separated allow-list to lock down;
-  // '*' or unset means "allow all origins".
   const corsOrigin = process.env.CORS_ORIGIN;
   app.enableCors({
     origin:
