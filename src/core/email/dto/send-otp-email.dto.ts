@@ -1,16 +1,16 @@
 import { IsEmail, IsInt, IsString, Min } from 'class-validator';
 
 export class SendOtpEmailDto {
-    @IsEmail()
-    to: string;
+  @IsEmail()
+  to: string;
 
-    @IsString()
-    name: string;
+  @IsString()
+  name: string;
 
-    @IsString()
-    otp: string;
+  @IsString()
+  otp: string;
 
-    @IsInt()
-    @Min(1)
-    expiryMinutes: number;
+  @IsInt()
+  @Min(1)
+  expiryMinutes: number;
 }

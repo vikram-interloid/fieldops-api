@@ -18,8 +18,10 @@ import { SlaModule } from './modules/sla/sla.module';
 import { ServiceCaseModule } from './modules/service-cases/service-cases.module';
 import { NotificationModule } from './modules/notifications/notifications.module';
 import { EmailModule } from './core/email/email.module';
-// TODO: re-enable once S3_BUCKET is configured in .env
-// import { UploadModule } from './modules/uploads/uploads.module';
+import { StorageModule } from './core/storage/storage.module';
+import { UploadModule } from './modules/uploads/uploads.module';
+import { AttachmentsModule } from './modules/attachments/attachments.module';
+import { TableViewsModule } from './modules/table-views/table-views.module';
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { EmailModule } from './core/email/email.module';
       load: [configuration, jwtConfig],
     }),
     PrismaModule,
+    StorageModule,
     AuthModule,
     UserModule,
     OrganizationModule,
@@ -42,7 +45,9 @@ import { EmailModule } from './core/email/email.module';
     ServiceCaseModule,
     NotificationModule,
     EmailModule,
-    // UploadModule,
+    UploadModule,
+    AttachmentsModule,
+    TableViewsModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

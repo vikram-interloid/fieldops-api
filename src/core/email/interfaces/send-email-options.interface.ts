@@ -1,15 +1,15 @@
 export interface SendEmailOptions {
-    to: string;
+  to: string;
 
-    subject: string;
+  subject: string;
 
-    html: string;
+  html: string;
 
-    text?: string;
+  text?: string;
 
-    cc?: string[];
+  cc?: string[];
 
-    bcc?: string[];
+  bcc?: string[];
 
-    replyTo?: string[];
+  replyTo?: string[];
 }

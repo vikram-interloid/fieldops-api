@@ -1,18 +1,13 @@
-import {
-    IsNotEmpty,
-    IsOptional,
-    IsString,
-    MaxLength,
-} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateOrganizationDto {
-    @IsString()
-    @IsNotEmpty()
-    @MaxLength(150)
-    name: string;
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
+  name: string;
 
-    @IsOptional()
-    @IsString()
-    @MaxLength(100)
-    industry?: string;
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  industry?: string;
 }

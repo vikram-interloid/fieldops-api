@@ -1,12 +1,8 @@
-import {
-    IsNotEmpty,
-    IsString,
-    MaxLength,
-} from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class CreateDeliveryPointDto {
-    @IsString()
-    @IsNotEmpty()
-    @MaxLength(150)
-    name: string;
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
+  name: string;
 }

@@ -8,12 +8,12 @@ import { CustomersRepository } from './repositories/customers.repository';
 import { CustomerLocationsRepository } from './repositories/customer-locations.repository';
 
 @Module({
-    controllers: [CustomersController, CustomerLocationsController],
-    providers: [
-        CustomersRepository,
-        CustomerLocationsRepository,
-        CustomersService,
-        CustomerLocationsService,
-    ],
+  controllers: [CustomersController, CustomerLocationsController],
+  providers: [
+    CustomersRepository,
+    CustomerLocationsRepository,
+    CustomersService,
+    CustomerLocationsService,
+  ],
 })
 export class CustomerModule {}

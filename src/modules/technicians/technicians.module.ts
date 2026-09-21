@@ -5,7 +5,7 @@ import { TechniciansService } from './services/technicians.service';
 import { TechniciansRepository } from './repositories/technicians.repository';
 
 @Module({
-    controllers: [TechniciansController],
-    providers: [TechniciansRepository, TechniciansService],
+  controllers: [TechniciansController],
+  providers: [TechniciansRepository, TechniciansService],
 })
 export class TechnicianModule {}

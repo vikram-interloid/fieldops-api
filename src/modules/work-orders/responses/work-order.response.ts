@@ -1,39 +1,47 @@
+import { CustomerResponse } from 'src/modules/customers/responses/customer.response';
+import { TechnicianResponse } from 'src/modules/technicians/responses/technician.response';
+import { AssetResponse } from 'src/modules/assets/responses/asset.response';
+
 export class WorkOrderResponse {
+  id: string;
+  workOrderNo: string;
+  customerId?: string | null;
+  technicianId?: string | null;
+  assetId?: string | null;
+  priority: string;
+  status: string;
+  serviceType?: string | null;
+  location?: string | null;
+  contactName?: string | null;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
+  due: string;
+  scheduledDate?: string | null;
+  estimatedHours?: number | null;
+  description?: string | null;
+  accepted: boolean;
+  lat?: number | null;
+  lng?: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+  customer?: Partial<CustomerResponse> | null;
+  technician?: Partial<TechnicianResponse> | null;
+  asset?: Partial<AssetResponse> | null;
+  locationId?: string | null;
+  /** Service site — the geocoded position map clients should plot. */
+  site?: {
     id: string;
-    workOrderNo: string;
-    customerId?: string | null;
-    technicianId?: string | null;
-    assetId?: string | null;
-    priority: string;
-    status: string;
-    serviceType?: string | null;
-    location?: string | null;
-    contactName?: string | null;
-    contactPhone?: string | null;
-    contactEmail?: string | null;
-    due: string;
-    scheduledDate?: string | null;
-    estimatedHours?: number | null;
-    description?: string | null;
-    accepted: boolean;
+    name: string;
+    address?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
     lat?: number | null;
     lng?: number | null;
-    createdAt: Date;
-    updatedAt: Date;
-    customer?: { name: string } | null;
-    technician?: { name: string } | null;
-    asset?: { name: string } | null;
-    locationId?: string | null;
-    /** Service site — the geocoded position map clients should plot. */
-    site?: {
-        id: string;
-        name: string;
-        address?: string | null;
-        city?: string | null;
-        state?: string | null;
-        postalCode?: string | null;
-        country?: string | null;
-        lat?: number | null;
-        lng?: number | null;
-    } | null;
+  } | null;
+  attachments?: any[];
+  events?: any[];
+  serviceCase?: any;
+  operator?: any;
 }

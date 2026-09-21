@@ -9,51 +9,51 @@ import { PART_MESSAGES } from '../constants/part.constants';
 
 @Injectable()
 export class PartsService {
-    constructor(private readonly partsRepository: PartsRepository) {}
+  constructor(private readonly partsRepository: PartsRepository) {}
 
-    findAll(userId: string) {
-        return this.partsRepository.findAll(userId);
+  findAll(userId: string) {
+    return this.partsRepository.findAll(userId);
+  }
+
+  async findById(userId: string, id: string): Promise<PartResponse> {
+    const part = await this.partsRepository.findById(userId, id);
+
+    if (!part) {
+      throw new NotFoundException(PART_MESSAGES.NOT_FOUND);
     }
 
-    async findById(userId: string, id: string): Promise<PartResponse> {
-        const part = await this.partsRepository.findById(userId, id);
+    return part;
+  }
 
-        if (!part) {
-            throw new NotFoundException(PART_MESSAGES.NOT_FOUND);
-        }
+  create(userId: string, dto: CreatePartDto) {
+    return this.partsRepository.create(userId, dto);
+  }
 
-        return part;
-    }
+  async update(
+    userId: string,
+    id: string,
+    dto: UpdatePartDto,
+  ): Promise<PartResponse> {
+    await this.findById(userId, id);
 
-    create(userId: string, dto: CreatePartDto) {
-        return this.partsRepository.create(userId, dto);
-    }
+    return this.partsRepository.update(id, dto);
+  }
 
-    async update(
-        userId: string,
-        id: string,
-        dto: UpdatePartDto,
-    ): Promise<PartResponse> {
-        await this.findById(userId, id);
+  async adjustQuantity(
+    userId: string,
+    id: string,
+    dto: AdjustQuantityDto,
+  ): Promise<PartResponse> {
+    const part = await this.findById(userId, id);
 
-        return this.partsRepository.update(id, dto);
-    }
+    const quantity = Math.max(0, part.quantity + dto.delta);
 
-    async adjustQuantity(
-        userId: string,
-        id: string,
-        dto: AdjustQuantityDto,
-    ): Promise<PartResponse> {
-        const part = await this.findById(userId, id);
+    return this.partsRepository.updateQuantity(id, quantity);
+  }
 
-        const quantity = Math.max(0, part.quantity + dto.delta);
+  async delete(userId: string, id: string): Promise<void> {
+    await this.findById(userId, id);
 
-        return this.partsRepository.updateQuantity(id, quantity);
-    }
-
-    async delete(userId: string, id: string): Promise<void> {
-        await this.findById(userId, id);
-
-        await this.partsRepository.delete(id);
-    }
+    await this.partsRepository.delete(id);
+  }
 }

@@ -5,7 +5,7 @@ import { OperatorsService } from './services/operators.service';
 import { OperatorsRepository } from './repositories/operators.repository';
 
 @Module({
-    controllers: [OperatorsController],
-    providers: [OperatorsRepository, OperatorsService],
+  controllers: [OperatorsController],
+  providers: [OperatorsRepository, OperatorsService],
 })
 export class OperatorModule {}

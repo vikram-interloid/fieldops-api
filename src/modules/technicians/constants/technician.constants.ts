@@ -1,3 +1,3 @@
 export const TECHNICIAN_MESSAGES = {
-    NOT_FOUND: 'Technician not found',
+  NOT_FOUND: 'Technician not found',
 };

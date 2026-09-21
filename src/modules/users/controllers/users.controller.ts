@@ -1,10 +1,10 @@
 import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    Patch,
-    UseGuards,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Patch,
+  UseGuards,
 } from '@nestjs/common';
 
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
@@ -16,36 +16,20 @@ import { UpdateUserDto } from '../dto/update-user.dto';
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
-    constructor(
-        private readonly usersService: UsersService,
-    ) { }
+  constructor(private readonly usersService: UsersService) {}
 
-    @Get('profile')
-    getProfile(
-        @CurrentUser() user: AuthUser,
-    ) {
-        return this.usersService.findById(
-            user.userId,
-        );
-    }
+  @Get('profile')
+  getProfile(@CurrentUser() user: AuthUser) {
+    return this.usersService.findById(user.userId);
+  }
 
-    @Patch('profile')
-    updateProfile(
-        @CurrentUser() user: AuthUser,
-        @Body() dto: UpdateUserDto,
-    ) {
-        return this.usersService.update(
-            user.userId,
-            dto,
-        );
-    }
+  @Patch('profile')
+  updateProfile(@CurrentUser() user: AuthUser, @Body() dto: UpdateUserDto) {
+    return this.usersService.update(user.userId, dto);
+  }
 
-    @Delete('profile')
-    removeProfile(
-        @CurrentUser() user: AuthUser,
-    ) {
-        return this.usersService.delete(
-            user.userId,
-        );
-    }
+  @Delete('profile')
+  removeProfile(@CurrentUser() user: AuthUser) {
+    return this.usersService.delete(user.userId);
+  }
 }

@@ -9,41 +9,32 @@ import { EmailController } from './controllers/email.controller';
 import { TemplateService } from './services/template.services';
 
 @Module({
-    controllers: [
-        EmailController,
-    ],
-    providers: [
-        {
-            provide: EMAIL_PROVIDER,
-            inject: [ConfigService],
-            useFactory: (
-                configService: ConfigService,
-            ) => {
-                // Default is SMTP (used by /auth/send-otp). Set
-                // EMAIL_PROVIDER=ses to switch the whole mail stack to SES.
-                const name = (
-                    configService.get<string>('EMAIL_PROVIDER') ?? 'smtp'
-                ).toLowerCase();
+  controllers: [EmailController],
+  providers: [
+    {
+      provide: EMAIL_PROVIDER,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        // Default is SMTP (used by /auth/send-otp). Set
+        // EMAIL_PROVIDER=ses to switch the whole mail stack to SES.
+        const name = (
+          configService.get<string>('EMAIL_PROVIDER') ?? 'smtp'
+        ).toLowerCase();
 
-                const provider =
-                    name === 'ses'
-                        ? new SesProvider(configService)
-                        : new SmtpProvider(configService);
+        const provider =
+          name === 'ses'
+            ? new SesProvider(configService)
+            : new SmtpProvider(configService);
 
-                new Logger('EmailModule').log(
-                    `Using ${provider.constructor.name}`,
-                );
+        new Logger('EmailModule').log(`Using ${provider.constructor.name}`);
 
-                return provider;
-            },
-        },
-        EmailService,
-        TemplateService,
-    ],
+        return provider;
+      },
+    },
+    EmailService,
+    TemplateService,
+  ],
 
-    exports: [
-        EmailService,
-    ],
+  exports: [EmailService],
 })
-
-export class EmailModule { }
+export class EmailModule {}

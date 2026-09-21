@@ -7,47 +7,44 @@ import { NOTIFICATION_MESSAGES } from '../constants/notification.constants';
 
 @Injectable()
 export class NotificationsService {
-    constructor(
-        private readonly notificationsRepository: NotificationsRepository,
-    ) {}
+  constructor(
+    private readonly notificationsRepository: NotificationsRepository,
+  ) {}
 
-    findAll(userId: string) {
-        return this.notificationsRepository.findAll(userId);
+  findAll(userId: string) {
+    return this.notificationsRepository.findAll(userId);
+  }
+
+  async findById(userId: string, id: string): Promise<NotificationResponse> {
+    const notification = await this.notificationsRepository.findById(
+      userId,
+      id,
+    );
+
+    if (!notification) {
+      throw new NotFoundException(NOTIFICATION_MESSAGES.NOT_FOUND);
     }
 
-    async findById(userId: string, id: string): Promise<NotificationResponse> {
-        const notification = await this.notificationsRepository.findById(
-            userId,
-            id,
-        );
+    return notification;
+  }
 
-        if (!notification) {
-            throw new NotFoundException(NOTIFICATION_MESSAGES.NOT_FOUND);
-        }
+  create(userId: string, dto: CreateNotificationDto) {
+    return this.notificationsRepository.create(userId, dto);
+  }
 
-        return notification;
-    }
+  async markAsRead(userId: string, id: string): Promise<NotificationResponse> {
+    await this.findById(userId, id);
 
-    create(userId: string, dto: CreateNotificationDto) {
-        return this.notificationsRepository.create(userId, dto);
-    }
+    return this.notificationsRepository.markAsRead(id);
+  }
 
-    async markAsRead(
-        userId: string,
-        id: string,
-    ): Promise<NotificationResponse> {
-        await this.findById(userId, id);
+  markAllAsRead(userId: string) {
+    return this.notificationsRepository.markAllAsRead(userId);
+  }
 
-        return this.notificationsRepository.markAsRead(id);
-    }
+  async delete(userId: string, id: string): Promise<void> {
+    await this.findById(userId, id);
 
-    markAllAsRead(userId: string) {
-        return this.notificationsRepository.markAllAsRead(userId);
-    }
-
-    async delete(userId: string, id: string): Promise<void> {
-        await this.findById(userId, id);
-
-        await this.notificationsRepository.delete(id);
-    }
+    await this.notificationsRepository.delete(id);
+  }
 }

@@ -1,3 +1,3 @@
 export const NOTIFICATION_MESSAGES = {
-    NOT_FOUND: 'Notification not found',
+  NOT_FOUND: 'Notification not found',
 };

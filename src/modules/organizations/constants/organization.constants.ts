@@ -1,3 +1,3 @@
 export const ORGANIZATION_MESSAGES = {
-    NOT_FOUND: 'Organization not found',
+  NOT_FOUND: 'Organization not found',
 };

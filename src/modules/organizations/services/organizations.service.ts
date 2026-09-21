@@ -1,103 +1,109 @@
 import {
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
-} from "@nestjs/common";
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
-import { OrganizationsRepository } from "../repositories/organizations.repository";
-import { OrganizationResponse } from "../responses/organization.response";
-import { CreateOrganizationDto } from "../dto/create-organization.dto";
-import { UpdateOrganizationDto } from "../dto/update-organization.dto";
-import { ORGANIZATION_MESSAGES } from "../constants/organization.constants";
+import { OrganizationsRepository } from '../repositories/organizations.repository';
+import { OrganizationResponse } from '../responses/organization.response';
+import { CreateOrganizationDto } from '../dto/create-organization.dto';
+import { UpdateOrganizationDto } from '../dto/update-organization.dto';
+import { ORGANIZATION_MESSAGES } from '../constants/organization.constants';
 
 @Injectable()
 export class OrganizationsService {
-    constructor(
-        private readonly organizationsRepository: OrganizationsRepository,
-    ) { }
+  constructor(
+    private readonly organizationsRepository: OrganizationsRepository,
+  ) {}
 
-    async findCurrent(
-        userId: string,
-    ): Promise<OrganizationResponse> {
-        const organization = await this.organizationsRepository.findByUserId(
-            userId,
-        );
+  async findCurrent(userId: string): Promise<OrganizationResponse> {
+    const organization =
+      await this.organizationsRepository.findByUserId(userId);
 
-        if (!organization) {
-            throw new NotFoundException(
-                ORGANIZATION_MESSAGES.NOT_FOUND,
-            );
-        }
-
-        return organization;
+    if (!organization) {
+      throw new NotFoundException(ORGANIZATION_MESSAGES.NOT_FOUND);
     }
 
-    findAll() {
-        return this.organizationsRepository.findAll();
+    return organization;
+  }
+
+  async updateCurrent(
+    userId: string,
+    dto: UpdateOrganizationDto,
+  ): Promise<OrganizationResponse> {
+    const userContext =
+      await this.organizationsRepository.getUserOrgContext(userId);
+    if (!userContext || !userContext.organizationId) {
+      throw new NotFoundException(ORGANIZATION_MESSAGES.NOT_FOUND);
     }
 
-    /** Only platform (FieldOps) staff may review/verify tenants. */
-    private async assertPlatform(userId: string): Promise<void> {
-        const type = await this.organizationsRepository.orgTypeForUser(userId);
-        if (type !== 'platform') {
-            throw new ForbiddenException(
-                'Only FieldOps platform staff can review organizations.',
-            );
-        }
+    if (!userContext.isOrgAdmin) {
+      throw new ForbiddenException(
+        'Only organization administrators can update organization details.',
+      );
     }
 
-    /** Platform-only: list orgs for verification review, optionally by status. */
-    async findForReview(actorUserId: string, status?: string) {
-        await this.assertPlatform(actorUserId);
-        return this.organizationsRepository.findAll(status);
+    return this.organizationsRepository.update(userContext.organizationId, dto);
+  }
+
+  findAll() {
+    return this.organizationsRepository.findAll();
+  }
+
+  /** Only platform (FieldOps) staff may review/verify tenants. */
+  private async assertPlatform(userId: string): Promise<void> {
+    const type = await this.organizationsRepository.orgTypeForUser(userId);
+    if (type !== 'platform') {
+      throw new ForbiddenException(
+        'Only FieldOps platform staff can review organizations.',
+      );
+    }
+  }
+
+  /** Platform-only: list orgs for verification review, optionally by status. */
+  async findForReview(actorUserId: string, status?: string) {
+    await this.assertPlatform(actorUserId);
+    return this.organizationsRepository.findAll(status);
+  }
+
+  /** Platform-only: mark an org verified/rejected/pending. */
+  async setVerification(
+    actorUserId: string,
+    id: string,
+    status: 'verified' | 'rejected' | 'pending',
+    note?: string,
+  ) {
+    await this.assertPlatform(actorUserId);
+    await this.findById(id);
+    return this.organizationsRepository.setVerification(id, status, note);
+  }
+
+  async findById(id: string): Promise<OrganizationResponse> {
+    const organization = await this.organizationsRepository.findById(id);
+
+    if (!organization) {
+      throw new NotFoundException(ORGANIZATION_MESSAGES.NOT_FOUND);
     }
 
-    /** Platform-only: mark an org verified/rejected/pending. */
-    async setVerification(
-        actorUserId: string,
-        id: string,
-        status: 'verified' | 'rejected' | 'pending',
-        note?: string,
-    ) {
-        await this.assertPlatform(actorUserId);
-        await this.findById(id);
-        return this.organizationsRepository.setVerification(id, status, note);
-    }
+    return organization;
+  }
 
-    async findById(
-        id: string,
-    ): Promise<OrganizationResponse> {
-        const organization = await this.organizationsRepository.findById(id);
+  create(dto: CreateOrganizationDto) {
+    return this.organizationsRepository.create(dto);
+  }
 
-        if (!organization) {
-            throw new NotFoundException(
-                ORGANIZATION_MESSAGES.NOT_FOUND,
-            );
-        }
+  async update(
+    id: string,
+    dto: UpdateOrganizationDto,
+  ): Promise<OrganizationResponse> {
+    await this.findById(id);
 
-        return organization;
-    }
+    return this.organizationsRepository.update(id, dto);
+  }
 
-    create(
-        dto: CreateOrganizationDto,
-    ) {
-        return this.organizationsRepository.create(dto);
-    }
+  async delete(id: string): Promise<void> {
+    await this.findById(id);
 
-    async update(
-        id: string,
-        dto: UpdateOrganizationDto,
-    ): Promise<OrganizationResponse> {
-        await this.findById(id);
-
-        return this.organizationsRepository.update(id, dto);
-    }
-
-    async delete(
-        id: string,
-    ): Promise<void> {
-        await this.findById(id);
-
-        await this.organizationsRepository.delete(id);
-    }
+    await this.organizationsRepository.delete(id);
+  }
 }

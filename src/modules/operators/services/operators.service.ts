@@ -8,61 +8,61 @@ import { OPERATOR_MESSAGES } from '../constants/operator.constants';
 
 @Injectable()
 export class OperatorsService {
-    constructor(private readonly operatorsRepository: OperatorsRepository) {}
+  constructor(private readonly operatorsRepository: OperatorsRepository) {}
 
-    findAll(userId: string) {
-        return this.operatorsRepository.findAll(userId);
-    }
+  findAll(userId: string) {
+    return this.operatorsRepository.findAll(userId);
+  }
 
-    async findById(userId: string, id: string) {
-        const operator = await this.operatorsRepository.findById(userId, id);
-        if (!operator) {
-            throw new NotFoundException(OPERATOR_MESSAGES.NOT_FOUND);
-        }
-        return operator;
+  async findById(userId: string, id: string) {
+    const operator = await this.operatorsRepository.findById(userId, id);
+    if (!operator) {
+      throw new NotFoundException(OPERATOR_MESSAGES.NOT_FOUND);
     }
+    return operator;
+  }
 
-    create(userId: string, dto: CreateOperatorDto) {
-        return this.operatorsRepository.create(userId, dto);
-    }
+  create(userId: string, dto: CreateOperatorDto) {
+    return this.operatorsRepository.create(userId, dto);
+  }
 
-    async update(userId: string, id: string, dto: UpdateOperatorDto) {
-        await this.findById(userId, id);
-        return this.operatorsRepository.update(id, dto);
-    }
+  async update(userId: string, id: string, dto: UpdateOperatorDto) {
+    await this.findById(userId, id);
+    return this.operatorsRepository.update(id, dto);
+  }
 
-    async delete(userId: string, id: string): Promise<void> {
-        await this.findById(userId, id);
-        await this.operatorsRepository.delete(id);
-    }
+  async delete(userId: string, id: string): Promise<void> {
+    await this.findById(userId, id);
+    await this.operatorsRepository.delete(id);
+  }
 
-    async addServiceArea(
-        userId: string,
-        operatorId: string,
-        dto: CreateServiceAreaDto,
-    ) {
-        const operator = await this.operatorsRepository.findOperatorInOrg(
-            userId,
-            operatorId,
-        );
-        if (!operator) {
-            throw new NotFoundException(OPERATOR_MESSAGES.NOT_FOUND);
-        }
-        return this.operatorsRepository.createServiceArea(
-            operator.organizationId,
-            operatorId,
-            dto,
-        );
+  async addServiceArea(
+    userId: string,
+    operatorId: string,
+    dto: CreateServiceAreaDto,
+  ) {
+    const operator = await this.operatorsRepository.findOperatorInOrg(
+      userId,
+      operatorId,
+    );
+    if (!operator) {
+      throw new NotFoundException(OPERATOR_MESSAGES.NOT_FOUND);
     }
+    return this.operatorsRepository.createServiceArea(
+      operator.organizationId,
+      operatorId,
+      dto,
+    );
+  }
 
-    async removeServiceArea(userId: string, areaId: string): Promise<void> {
-        const area = await this.operatorsRepository.findServiceAreaInOrg(
-            userId,
-            areaId,
-        );
-        if (!area) {
-            throw new NotFoundException(OPERATOR_MESSAGES.AREA_NOT_FOUND);
-        }
-        await this.operatorsRepository.deleteServiceArea(areaId);
+  async removeServiceArea(userId: string, areaId: string): Promise<void> {
+    const area = await this.operatorsRepository.findServiceAreaInOrg(
+      userId,
+      areaId,
+    );
+    if (!area) {
+      throw new NotFoundException(OPERATOR_MESSAGES.AREA_NOT_FOUND);
     }
+    await this.operatorsRepository.deleteServiceArea(areaId);
+  }
 }

@@ -1,16 +1,16 @@
-import { IsEmail, IsOptional, IsString } from "class-validator";
+import { IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class SendEmailDto {
-    @IsEmail()
-    to: string;
+  @IsEmail()
+  to: string;
 
-    @IsString()
-    subject: string;
+  @IsString()
+  subject: string;
 
-    @IsString()
-    html: string;
+  @IsString()
+  html: string;
 
-    @IsString()
-    @IsOptional()
-    text?: string;
+  @IsString()
+  @IsOptional()
+  text?: string;
 }

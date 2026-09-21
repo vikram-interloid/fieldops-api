@@ -32,6 +32,8 @@ model Organization {
   technicians        Technician[]
   users              User[]
   workOrders         WorkOrder[]
+  attachments        Attachment[]
+  tableViews         TableView[]
 
   @@map("organizations")
 }
@@ -145,9 +147,13 @@ model User {
   createdAt           DateTime             @default(now()) @map("created_at")
   updatedAt           DateTime             @default(now()) @updatedAt @map("updated_at")
   avatarUrl           String?              @map("avatar_url")
+  avatarKey           String?              @map("avatar_key") @db.VarChar(500)
   passwordResetTokens PasswordResetToken[]
   refreshTokens       RefreshToken[]
   userRoles           UserRole[]
+  avatarAttachments   Attachment[]         @relation("UserAvatarAttachment")
+  uploadedAttachments Attachment[]         @relation("UploadedAttachments")
+  tableViews          TableView[]
   customer            Customer?            @relation(fields: [customerId], references: [id])
   organization        Organization         @relation(fields: [organizationId], references: [id])
   technician          Technician?          @relation(fields: [technicianId], references: [id])
@@ -284,10 +290,12 @@ model Asset {
   nextServiceDate String?        @map("next_service_date") @db.VarChar(40)
   notes           String?
   photoUrl        String?        @map("photo_url") @db.VarChar(500)
+  photoKey        String?        @map("photo_key") @db.VarChar(500)
   locationId      String?        @map("location_id") @db.Uuid
   deliveryPointId String?        @map("delivery_point_id") @db.Uuid
   createdAt       DateTime       @default(now()) @map("created_at")
   updatedAt       DateTime       @updatedAt @map("updated_at")
+  attachments     Attachment[]
   customer        Customer?      @relation(fields: [customerId], references: [id])
   deliveryPoint   DeliveryPoint? @relation(fields: [deliveryPointId], references: [id])
   site            Location?      @relation(fields: [locationId], references: [id])
@@ -346,6 +354,7 @@ model WorkOrder {
   operatorId     String?          @map("operator_id") @db.Uuid
   serviceCase    ServiceCase?
   events         WorkOrderEvent[]
+  attachments    Attachment[]
   asset          Asset?           @relation(fields: [assetId], references: [id])
   customer       Customer?        @relation(fields: [customerId], references: [id])
   site           Location?        @relation(fields: [locationId], references: [id])
@@ -428,6 +437,7 @@ model ServiceCase {
   updatedAt             DateTime           @updatedAt @map("updated_at")
   caseNo                String             @unique @default(dbgenerated("next_service_case_no()"))
   events                ServiceCaseEvent[]
+  attachments           Attachment[]
   customer              Customer?          @relation(fields: [customerId], references: [id])
   operator              Operator?          @relation(fields: [operatorId], references: [id])
   organization          Organization       @relation(fields: [organizationId], references: [id])
@@ -448,6 +458,57 @@ model Notification {
   organization   Organization @relation(fields: [organizationId], references: [id])
 
   @@map("notifications")
+}
+
+model Attachment {
+  id             String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String        @map("organization_id") @db.Uuid
+  key            String        @db.VarChar(500)
+  fileName       String        @map("file_name") @db.VarChar(255)
+  fileSize       Int           @map("file_size")
+  mimeType       String        @map("mime_type") @db.VarChar(100)
+  type           String        @default("attachment") @db.VarChar(50)
+  userId         String?       @map("user_id") @db.Uuid
+  assetId        String?       @map("asset_id") @db.Uuid
+  serviceCaseId  String?       @map("service_case_id") @db.Uuid
+  workOrderId    String?       @map("work_order_id") @db.Uuid
+  uploadedById   String?       @map("uploaded_by_id") @db.Uuid
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  user           User?         @relation("UserAvatarAttachment", fields: [userId], references: [id], onDelete: Cascade)
+  asset          Asset?        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  serviceCase    ServiceCase?  @relation(fields: [serviceCaseId], references: [id], onDelete: Cascade)
+  workOrder      WorkOrder?    @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  uploadedBy     User?         @relation("UploadedAttachments", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([serviceCaseId])
+  @@index([workOrderId])
+  @@index([assetId])
+  @@index([userId])
+  @@map("attachments")
+}
+
+model TableView {
+  id             String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  userId         String       @map("user_id") @db.Uuid
+  tableKey       String       @map("table_key") @db.VarChar(60)
+  name           String       @db.VarChar(100)
+  filters        Json
+  isDefault      Boolean      @default(false) @map("is_default")
+  isShared       Boolean      @default(false) @map("is_shared")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, tableKey])
+  @@index([organizationId, tableKey])
+  @@map("table_views")
 }
 
 enum OtpPurpose {
