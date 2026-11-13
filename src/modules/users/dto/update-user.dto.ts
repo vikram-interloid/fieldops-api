@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -15,6 +15,22 @@ export class UpdateUserDto {
   @IsString()
   @MaxLength(20)
   phone?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isOrgAdmin?: boolean;
+
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @IsOptional()
+  @IsString()
+  organizationId?: string;
 
   // Base64 data URL or remote URL. Explicit `null` clears the photo.
   // ~4 MB cap comfortably fits the 512×512 JPEG the crop dialog produces.

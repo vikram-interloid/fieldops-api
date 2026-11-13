@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 
 import { PrismaService } from 'src/core/database/prisma.service';
+import * as bcrypt from 'bcrypt';
 import { CreateTechnicianDto } from '../dto/create-technician.dto';
 import { UpdateTechnicianDto } from '../dto/update-technician.dto';
 
@@ -176,6 +177,95 @@ export class TechniciansRepository {
     }
   }
 
+  /** Ensures any skills referenced on the technician exist in the skills catalog table. */
+  private async syncSkills(organizationId: string, skills?: string[]): Promise<void> {
+    if (!skills || skills.length === 0) return;
+    for (const raw of skills) {
+      const name = raw.trim();
+      if (!name) continue;
+      await this.prisma.skill.upsert({
+        where: { organizationId_name: { organizationId, name } },
+        create: { organizationId, name },
+        update: {},
+      });
+    }
+  }
+
+  /** Creates or links a user record for the technician and assigns the Technician role. */
+  private async syncTechnicianUser(
+    technicianId: string,
+    organizationId: string,
+    name: string,
+    email?: string | null,
+    phone?: string | null,
+    rawPassword?: string,
+  ): Promise<void> {
+    if (!email || !email.trim()) return;
+    const normalizedEmail = email.trim().toLowerCase();
+
+    let techRole = await this.prisma.role.findUnique({
+      where: { name: 'Technician' },
+      select: { id: true },
+    });
+    if (!techRole) {
+      techRole = await this.prisma.role.create({
+        data: { name: 'Technician', description: 'Field Technician' },
+        select: { id: true },
+      });
+    }
+
+    const nameParts = name.trim().split(/\s+/);
+    const firstName = nameParts[0] || 'Technician';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      include: { userRoles: true },
+    });
+
+    if (existingUser) {
+      await this.prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          technicianId,
+          firstName: existingUser.firstName || firstName,
+          lastName: existingUser.lastName || lastName,
+          phone: phone?.trim() || existingUser.phone,
+          isActive: true,
+        },
+      });
+
+      const hasTechRole = existingUser.userRoles.some((ur) => ur.roleId === techRole.id);
+      if (!hasTechRole) {
+        await this.prisma.userRole.create({
+          data: {
+            userId: existingUser.id,
+            roleId: techRole.id,
+          },
+        }).catch(() => {});
+      }
+    } else {
+      const password = rawPassword?.trim() || 'Password123!';
+      const passwordHash = await bcrypt.hash(password, 10);
+
+      await this.prisma.user.create({
+        data: {
+          firstName,
+          lastName,
+          email: normalizedEmail,
+          phone: phone?.trim() || null,
+          passwordHash,
+          organizationId,
+          technicianId,
+          isActive: true,
+          userRoles: {
+            create: { roleId: techRole.id },
+          },
+        },
+      });
+    }
+  }
+
   async create(
     userId: string,
     dto: CreateTechnicianDto,
@@ -184,10 +274,21 @@ export class TechniciansRepository {
     await this.assertOrgVerified(userId);
     const organizationId = await this.resolveOrganizationId(userId);
 
+    const { password, ...technicianData } = dto;
+
     const created = await this.prisma.technician.create({
-      data: { ...dto, organizationId },
+      data: { ...technicianData, organizationId },
       select: selectTechnician,
     });
+    await this.syncSkills(organizationId, dto.skills);
+    await this.syncTechnicianUser(
+      created.id,
+      organizationId,
+      dto.name,
+      dto.email,
+      dto.phone,
+      password,
+    );
     await this.logEvent(created.id, 'created', {
       to: created.status,
       actor: actor ?? { userId },
@@ -198,13 +299,37 @@ export class TechniciansRepository {
   async update(id: string, dto: UpdateTechnicianDto, actor?: TechnicianActor) {
     const before = await this.prisma.technician.findUnique({
       where: { id },
-      select: { status: true },
+      select: { status: true, organizationId: true },
     });
     const updated = await this.prisma.technician.update({
       where: { id },
       data: dto,
       select: selectTechnician,
     });
+    if (before && dto.skills) {
+      await this.syncSkills(before.organizationId, dto.skills);
+    }
+
+    if (dto.name || dto.email || dto.phone !== undefined) {
+      const linkedUser = await this.prisma.user.findFirst({
+        where: { technicianId: id },
+      });
+      if (linkedUser) {
+        const updateData: { firstName?: string; lastName?: string; email?: string; phone?: string | null } = {};
+        if (dto.email) updateData.email = dto.email.trim().toLowerCase();
+        if (dto.phone !== undefined) updateData.phone = dto.phone?.trim() || null;
+        if (dto.name) {
+          const nameParts = dto.name.trim().split(/\s+/);
+          updateData.firstName = nameParts[0];
+          updateData.lastName = nameParts.slice(1).join(' ') || '';
+        }
+        await this.prisma.user.update({
+          where: { id: linkedUser.id },
+          data: updateData,
+        }).catch(() => {});
+      }
+    }
+
     // A status change gets its own event; other edits log as 'updated'.
     if (before && before.status !== updated.status) {
       await this.logEvent(id, 'status_changed', {
@@ -218,7 +343,11 @@ export class TechniciansRepository {
     return updated;
   }
 
-  delete(id: string) {
+  async delete(id: string) {
+    await this.prisma.user.updateMany({
+      where: { technicianId: id },
+      data: { isActive: false, technicianId: null },
+    });
     return this.prisma.technician.delete({
       where: { id },
     });

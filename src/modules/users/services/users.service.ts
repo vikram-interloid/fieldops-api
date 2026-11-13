@@ -24,6 +24,8 @@ type OrgUserRow = {
   avatarKey?: string | null;
   isActive: boolean;
   isOrgAdmin?: boolean;
+  organizationId?: string | null;
+  organization?: { id: string; name: string; type: string } | null;
   userRoles?: { role: { name: string } }[];
 };
 
@@ -69,6 +71,8 @@ export class UsersService {
       avatarUrl: this.resolveAvatar(user.avatarKey, user.avatarUrl),
       avatarKey: user.avatarKey ?? null,
       isActive: user.isActive,
+      isOrgAdmin: user.isOrgAdmin ?? false,
+      role: user.userRoles?.[0]?.role.name ?? null,
     };
   }
   async update(id: string, dto: UpdateUserDto): Promise<UserResponse> {
@@ -83,6 +87,8 @@ export class UsersService {
       avatarUrl: this.resolveAvatar(user.avatarKey, user.avatarUrl),
       avatarKey: user.avatarKey ?? null,
       isActive: user.isActive,
+      isOrgAdmin: user.isOrgAdmin ?? false,
+      role: user.userRoles?.[0]?.role.name ?? null,
     };
   }
 
@@ -104,23 +110,36 @@ export class UsersService {
       isActive: row.isActive,
       isOrgAdmin: row.isOrgAdmin ?? false,
       role: row.userRoles?.[0]?.role.name ?? null,
+      organizationId: row.organizationId ?? row.organization?.id ?? null,
+      organizationName: row.organization?.name ?? null,
+      orgType: row.organization?.type ?? null,
     };
   }
 
-  /** Every user in the caller's organization (any member may view). */
+  /** Every user in the caller's organization (or all users across application for platform admin). */
   async listOrgUsers(userId: string): Promise<UserResponse[]> {
-    const { organizationId } = await this.usersRepository.getCaller(userId);
-    const rows = await this.usersRepository.findAllInOrg(organizationId);
-    return rows.map((r) => this.toOrgUser(r as OrgUserRow));
+    const caller = await this.usersRepository.getCaller(userId);
+    const orgType = await this.usersRepository.orgType(caller.organizationId);
+
+    if (orgType === 'platform') {
+      const rows = await this.usersRepository.findAllAcrossAllOrgs();
+      return rows.map((r) => this.toOrgUser(r as unknown as OrgUserRow));
+    }
+
+    const rows = await this.usersRepository.findAllInOrg(caller.organizationId);
+    return rows.map((r) => this.toOrgUser(r as unknown as OrgUserRow));
   }
 
-  /** Add a user to the caller's org — org admins only. */
+  /** Add a user to an organization — platform admin can add anywhere, tenant admins to their own org. */
   async createOrgUser(
     userId: string,
     dto: CreateOrgUserDto,
   ): Promise<UserResponse> {
     const caller = await this.usersRepository.getCaller(userId);
-    if (!caller.isOrgAdmin) {
+    const orgType = await this.usersRepository.orgType(caller.organizationId);
+    const isPlatform = orgType === 'platform';
+
+    if (!caller.isOrgAdmin && !isPlatform) {
       throw new ForbiddenException('Only an organization admin can add users.');
     }
 
@@ -129,12 +148,17 @@ export class UsersService {
       throw new ForbiddenException(AUTH_MESSAGES.EMAIL_ALREADY_EXISTS);
     }
 
+    const targetOrgId =
+      isPlatform && dto.organizationId
+        ? dto.organizationId
+        : caller.organizationId;
+
     const passwordHash = await this.passwordService.hash(dto.password);
     const roleName =
-      dto.role ?? (await this.defaultRole(caller.organizationId));
+      dto.role ?? (await this.defaultRole(targetOrgId));
 
     const row = await this.usersRepository.createInOrg(
-      caller.organizationId,
+      targetOrgId,
       {
         firstName: dto.firstName,
         lastName: dto.lastName,
@@ -145,13 +169,16 @@ export class UsersService {
       },
       roleName,
     );
-    return this.toOrgUser(row as OrgUserRow);
+    return this.toOrgUser(row as unknown as OrgUserRow);
   }
 
-  /** Deactivate a user in the caller's org — org admins only. */
+  /** Deactivate a user — platform admin can deactivate any user, tenant admins within their org. */
   async deleteOrgUser(userId: string, id: string): Promise<UserResponse> {
     const caller = await this.usersRepository.getCaller(userId);
-    if (!caller.isOrgAdmin) {
+    const orgType = await this.usersRepository.orgType(caller.organizationId);
+    const isPlatform = orgType === 'platform';
+
+    if (!caller.isOrgAdmin && !isPlatform) {
       throw new ForbiddenException(
         'Only an organization admin can remove users.',
       );
@@ -159,11 +186,24 @@ export class UsersService {
     if (id === userId) {
       throw new ForbiddenException('You cannot remove your own account.');
     }
+
+    if (isPlatform) {
+      const user = await this.usersRepository.findById(id);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      await this.usersRepository.delete(id);
+      return this.toOrgUser({
+        ...user,
+        isActive: false,
+      } as unknown as OrgUserRow);
+    }
+
     const row = await this.usersRepository.deactivateInOrg(
       caller.organizationId,
       id,
     );
-    return this.toOrgUser(row as OrgUserRow);
+    return this.toOrgUser(row as unknown as OrgUserRow);
   }
 
   /** Member role default: Customer for customer orgs, else Technician. */

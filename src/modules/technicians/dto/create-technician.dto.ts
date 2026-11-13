@@ -71,4 +71,9 @@ export class CreateTechnicianDto {
   @IsString()
   @MaxLength(40)
   hireDate?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  password?: string;
 }

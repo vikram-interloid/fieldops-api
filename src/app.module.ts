@@ -22,6 +22,7 @@ import { StorageModule } from './core/storage/storage.module';
 import { UploadModule } from './modules/uploads/uploads.module';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { TableViewsModule } from './modules/table-views/table-views.module';
+import { SkillsModule } from './modules/skills/skills.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { TableViewsModule } from './modules/table-views/table-views.module';
     UploadModule,
     AttachmentsModule,
     TableViewsModule,
+    SkillsModule,
   ],
 })
 export class AppModule {}

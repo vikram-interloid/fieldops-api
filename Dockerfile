@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 ###############################################################################
 # FieldOps API — production image
 #

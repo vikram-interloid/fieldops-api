@@ -39,5 +39,9 @@ export class CreateOrgUserDto {
   role?: string;
 
   @IsOptional()
+  @IsString()
+  organizationId?: string;
+
+  @IsOptional()
   isOrgAdmin?: boolean;
 }

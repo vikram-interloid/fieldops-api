@@ -9,4 +9,7 @@ export class UserResponse {
   isActive: boolean;
   isOrgAdmin?: boolean;
   role?: string | null;
+  organizationId?: string | null;
+  organizationName?: string | null;
+  orgType?: string | null;
 }

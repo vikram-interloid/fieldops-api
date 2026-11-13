@@ -34,6 +34,7 @@ model Organization {
   workOrders         WorkOrder[]
   attachments        Attachment[]
   tableViews         TableView[]
+  skills             Skill[]
 
   @@map("organizations")
 }
@@ -461,27 +462,27 @@ model Notification {
 }
 
 model Attachment {
-  id             String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  organizationId String        @map("organization_id") @db.Uuid
-  key            String        @db.VarChar(500)
-  fileName       String        @map("file_name") @db.VarChar(255)
-  fileSize       Int           @map("file_size")
-  mimeType       String        @map("mime_type") @db.VarChar(100)
-  type           String        @default("attachment") @db.VarChar(50)
-  userId         String?       @map("user_id") @db.Uuid
-  assetId        String?       @map("asset_id") @db.Uuid
-  serviceCaseId  String?       @map("service_case_id") @db.Uuid
-  workOrderId    String?       @map("work_order_id") @db.Uuid
-  uploadedById   String?       @map("uploaded_by_id") @db.Uuid
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
+  id             String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  key            String   @db.VarChar(500)
+  fileName       String   @map("file_name") @db.VarChar(255)
+  fileSize       Int      @map("file_size")
+  mimeType       String   @map("mime_type") @db.VarChar(100)
+  type           String   @default("attachment") @db.VarChar(50)
+  userId         String?  @map("user_id") @db.Uuid
+  assetId        String?  @map("asset_id") @db.Uuid
+  serviceCaseId  String?  @map("service_case_id") @db.Uuid
+  workOrderId    String?  @map("work_order_id") @db.Uuid
+  uploadedById   String?  @map("uploaded_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  organization   Organization  @relation(fields: [organizationId], references: [id])
-  user           User?         @relation("UserAvatarAttachment", fields: [userId], references: [id], onDelete: Cascade)
-  asset          Asset?        @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  serviceCase    ServiceCase?  @relation(fields: [serviceCaseId], references: [id], onDelete: Cascade)
-  workOrder      WorkOrder?    @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  uploadedBy     User?         @relation("UploadedAttachments", fields: [uploadedById], references: [id], onDelete: SetNull)
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User?        @relation("UserAvatarAttachment", fields: [userId], references: [id], onDelete: Cascade)
+  asset        Asset?       @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  serviceCase  ServiceCase? @relation(fields: [serviceCaseId], references: [id], onDelete: Cascade)
+  workOrder    WorkOrder?   @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  uploadedBy   User?        @relation("UploadedAttachments", fields: [uploadedById], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
   @@index([serviceCaseId])
@@ -492,23 +493,37 @@ model Attachment {
 }
 
 model TableView {
-  id             String       @id @default(dbgenerated("uuidv7()")) @db.Uuid
-  organizationId String       @map("organization_id") @db.Uuid
-  userId         String       @map("user_id") @db.Uuid
-  tableKey       String       @map("table_key") @db.VarChar(60)
-  name           String       @db.VarChar(100)
+  id             String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  tableKey       String   @map("table_key") @db.VarChar(60)
+  name           String   @db.VarChar(100)
   filters        Json
-  isDefault      Boolean      @default(false) @map("is_default")
-  isShared       Boolean      @default(false) @map("is_shared")
-  createdAt      DateTime     @default(now()) @map("created_at")
-  updatedAt      DateTime     @updatedAt @map("updated_at")
+  isDefault      Boolean  @default(false) @map("is_default")
+  isShared       Boolean  @default(false) @map("is_shared")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, tableKey])
   @@index([organizationId, tableKey])
   @@map("table_views")
+}
+
+model Skill {
+  id             String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String   @db.VarChar(100)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("skills")
 }
 
 enum OtpPurpose {

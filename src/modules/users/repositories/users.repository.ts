@@ -18,6 +18,10 @@ const selectUser = {
 const selectOrgUser = {
   ...selectUser,
   isOrgAdmin: true,
+  organizationId: true,
+  organization: {
+    select: { id: true, name: true, type: true },
+  },
   userRoles: {
     select: { role: { select: { name: true } } },
   },
@@ -35,9 +39,18 @@ export class UsersRepository {
     });
   }
 
+  findAllAcrossAllOrgs() {
+    return this.prisma.user.findMany({
+      select: selectOrgUser,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
   findById(id: string) {
     return this.prisma.user.findUnique({
-      select: selectUser,
+      select: selectOrgUser,
       where: {
         id: id,
       },
@@ -54,11 +67,27 @@ export class UsersRepository {
   }
 
   async update(id: string, dto: UpdateUserDto) {
+    const { role: roleName, ...userData } = dto;
+    let userRolesUpdate;
+    if (roleName) {
+      const role = await this.prisma.role.findUnique({
+        where: { name: roleName },
+      });
+      if (role) {
+        await this.prisma.userRole.deleteMany({ where: { userId: id } });
+        userRolesUpdate = { create: { roleId: role.id } };
+      }
+    }
+
     return this.prisma.user.update({
       where: {
         id: id,
       },
-      data: dto,
+      data: {
+        ...userData,
+        ...(userRolesUpdate ? { userRoles: userRolesUpdate } : {}),
+      },
+      select: selectOrgUser,
     });
   }
 
